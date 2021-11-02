@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/goyohangoyoill/Go-Piscine/match_client"
 	"github.com/bwmarrin/discordgo"
 )
 

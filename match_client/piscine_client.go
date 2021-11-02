@@ -1,7 +1,17 @@
 package match_client
 
+// MatchClient 구조체는 각 go-piscine 서브젝트의 평가 매칭을 관리하는 오브젝트이다.
 type MatchClient struct {
+	// MatchMap 은 uid 를 key 로 하여,
+	// 해당 유저가 매칭 성공시에 상대의 uid 를 받기 위한 채널을 value 로 한다.
+	MatchMap map[string]chan string
+}
 
+// NewMatchClient 함수는 MatchClient 구조체의 생성자이다.
+func NewMatchClient() (ret *MatchClient) {
+	ret = &MatchClient{}
+	ret.MatchMap = make(map[string]chan string)
+	return ret
 }
 
 // Submit 함수는 sid(subject id) uid(userID) url(github repo link)와
