@@ -49,6 +49,11 @@ func (mc *MatchClient) MatchState() (matchState EmbedInfo) {
 	return
 }
 
+// FindIntraByUID 함수는 uid 를 인자로 받아 intraID 를 반환하는 함수이다.
+func (mc *MatchClient) FindIntraByUID(uid string) (intraID string) {
+	return
+}
+
 // EmbedRow 구조체는 name 과 lines 를 가진다.
 // name, lines 를 반환하는 게터 함수들 역시 가진다.
 type EmbedRow struct {

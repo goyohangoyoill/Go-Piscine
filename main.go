@@ -119,7 +119,7 @@ func submissionTask(s *discordgo.Session, m *discordgo.MessageCreate) {
 		fmt.Println(item)
 	}
 	matchClient.Submit(command[2], m.Author.ID, command[1], matchedUserID)
-	switch matchedInterviewer := <-matchedUserID; matchedInterviewer {
+	switch matchedInterviewerID := <-matchedUserID; matchedInterviewer {
 	case "CANCEL":
 		close(matchedUserID)
 	default:
@@ -128,7 +128,7 @@ func submissionTask(s *discordgo.Session, m *discordgo.MessageCreate) {
 		matchSuccessEmbed.SetTitle("제출된 과제 `" + command[2] + "` 의 평가 매칭 성공!")
 		matchSuccessEmbed.AddField(
 			"매칭된 평가자",
-			matchedInterviewer,
+			matchClient.FindIntraByUID(matchedInterviewerID),
 		)
 		s.ChannelMessageSendEmbed(dmChan.ID, matchSuccessEmbed.MessageEmbed)
 	}
