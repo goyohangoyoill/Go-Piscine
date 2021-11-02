@@ -55,7 +55,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		sendCommandDetail(s, m)
 		return
 	}
-	if strings.HasPrefix(m.Content, "!제출 ") {
+	if strings.HasPrefix(m.Content, "!제출 ") {	// !제출 <github repo url> <subject #>
 		submissionTask(s, m)
 		return
 	}

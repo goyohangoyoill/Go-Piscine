@@ -17,6 +17,7 @@ func NewMatchClient() (ret *MatchClient) {
 // Submit 함수는 sid(subject id) uid(userID) url(github repo link)와
 // 매칭된 상대방의 UID 를 공유할 matchedUserId channel 을 인자로 받아
 // 서브젝트 제출을 수행하고 작업이 성공적으로 이루어졌는지 여부를 알리는 msg 를 반환하는 함수이다.
+// Eval Queue 에 사용자가 있는지 Mutex 를 걸고 확인한 후에 있다면 매칭을 진행해야한다. ** MUTEX 활용 필수!!
 func (mc *MatchClient) Submit(sid, uid, url string, matchedUserId chan string) (msg string) {
 	return ""
 }
@@ -29,6 +30,7 @@ func (mc *MatchClient) SubmitCancel(uid string) (msg string) {
 
 // RegisterEval 함수는 uid 와 매칭된 상대방의 UID 를 공유할 matchedUserId channel 을 인자로 받아
 // 평가 등록을 수행하고 작업이 성공적으로 이루어졌는지 여부를 알리는 msg 를 반환하는 함수이다.
+// Submit Queue 에 사용자가 있는지 Mutex 를 걸고 확인한 후에 있다면 매칭을 진행해야한다. ** MUTEX 활용 필수!!
 func (mc *MatchClient) RegisterEval(uid string, matchedUid chan string) (msg string) {
 	return ""
 }
