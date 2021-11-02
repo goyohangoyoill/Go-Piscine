@@ -73,8 +73,26 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 	if m.Content == "!매칭상태" {
 		state := matchClient.MatchState()
-
+		sendEmbedPretty(s, m.ChannelID, state)
 		return
+	}
+	if m.Content == "!내점수" {
+		grade := matchClient.MyGrade(m.Author.ID)
+		sendEmbedPretty(s, m.ChannelID, grade)
+	}
+}
+
+func sendEmbedPretty(s *discordgo.Session, cid string, info mc.EmbedInfo) {
+	answer := embed.NewEmbed()
+	answer.SetTitle(info.Title())
+	fields := info.EmbedRows()
+	for _, row := range fields {
+		name := row.Name()
+		value := ""
+		for _, line := range row.Lines() {
+			value += line + "\n"
+		}
+		answer.AddField(name, value)
 	}
 }
 

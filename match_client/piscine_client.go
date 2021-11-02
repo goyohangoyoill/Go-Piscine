@@ -70,7 +70,7 @@ func (si EmbedRow) Lines() []string {
 // title, subjectGrades 를 반환하는 게터 함수들 역시 가진다.
 type EmbedInfo struct {
 	title string
-	subjectGrades []EmbedRow
+	embedRows []EmbedRow
 }
 
 // Title 함수는 title 을 반환하는 게터이다.
@@ -78,7 +78,7 @@ func (gi EmbedInfo) Title() string {
 	return gi.title
 }
 
-// SubjectGrades 함수는 subjectGrades 을 반환하는 게터이다.
-func (gi EmbedInfo) SubjectGrades() []EmbedRow {
-	return gi.subjectGrades
+// EmbedRows 함수는 embedRows 을 반환하는 게터이다.
+func (gi EmbedInfo) EmbedRows() []EmbedRow {
+	return gi.embedRows
 }
