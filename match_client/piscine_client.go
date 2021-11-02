@@ -40,11 +40,45 @@ func (mc *MatchClient) EvalCancel(sid, uid string) (msg string) {
 }
 
 // MyGrade 함수는 uid 를 인자로 받아 해당 유저의 점수 정보를 리턴하는 함수이다.
-func (mc *MatchClient) MyGrade(uid string) (msg string) {
-	return ""
+func (mc *MatchClient) MyGrade(uid string) (grades EmbedInfo) {
+	return
 }
 
 // MatchState 함수는 uid 를 인자로 받아 해당 유저의 매칭 상태와 현재 대기중인 평가자/피평가자 수를 리턴하는 함수이다.
-func (mc *MatchClient) MatchState(uid string) (msg string) {
-	return ""
+func (mc *MatchClient) MatchState(uid string) (matchState EmbedInfo) {
+	return
+}
+
+// EmbedRow 구조체는 name 과 lines 를 가진다.
+// name, lines 를 반환하는 게터 함수들 역시 가진다.
+type EmbedRow struct {
+	name string
+	lines []string
+}
+
+// Name 함수는 name 을 반환하는 게터이다.
+func (si EmbedRow) Name() string {
+	return si.name
+}
+
+// Lines 함수는 lines 을 반환하는 게터이다.
+func (si EmbedRow) Lines() []string {
+	return si.lines
+}
+
+// EmbedInfo 구조체는 title 과 subjectGrades 를 가진다.
+// title, subjectGrades 를 반환하는 게터 함수들 역시 가진다.
+type EmbedInfo struct {
+	title string
+	subjectGrades []EmbedRow
+}
+
+// Title 함수는 title 을 반환하는 게터이다.
+func (gi EmbedInfo) Title() string {
+	return gi.title
+}
+
+// SubjectGrades 함수는 subjectGrades 을 반환하는 게터이다.
+func (gi EmbedInfo) SubjectGrades() []EmbedRow {
+	return gi.subjectGrades
 }

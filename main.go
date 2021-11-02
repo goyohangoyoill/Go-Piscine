@@ -82,12 +82,19 @@ func registerEvalTask(s *discordgo.Session, m *discordgo.MessageCreate) {
 }
 
 func submissionCancelTask(s *discordgo.Session, m *discordgo.MessageCreate) {
-	// TODO: 제출 취소 태스크 수행.
+	userChannel := matchClient.MatchMap[m.Author.ID]
+	if userChannel == nil {
+		return
+	}
+	userChannel <- "CANCEL"
 }
 
 func submissionTask(s *discordgo.Session, m *discordgo.MessageCreate) {
 	command := strings.Split(m.Content, " ")
 	matchedUserID := make(chan string)
+	for _, item := range command {
+		fmt.Println(item)
+	}
 	matchClient.Submit(command[2], m.Author.ID, command[1], matchedUserID)
 	switch matchedInterviewer := <-matchedUserID; matchedInterviewer {
 	case "CANCEL":
