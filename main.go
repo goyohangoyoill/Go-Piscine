@@ -119,7 +119,7 @@ func submissionTask(s *discordgo.Session, m *discordgo.MessageCreate) {
 		fmt.Println(item)
 	}
 	matchClient.Submit(command[2], m.Author.ID, command[1], matchedUserID)
-	switch matchedInterviewerID := <-matchedUserID; matchedInterviewer {
+	switch matchedInterviewerID := <-matchedUserID; matchedInterviewerID {
 	case "CANCEL":
 		close(matchedUserID)
 	default:
