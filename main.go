@@ -13,7 +13,7 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	embed "github.com/clinet/discordgo-embed"
-	mc "github.com/goyohangoyoill/Go-Piscine/match_client"
+	mc "github.com/goyohangoyoill/Go-Piscine-EvalBot/match_client"
 )
 
 var (
@@ -69,6 +69,11 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 	if m.Content == "!평가취소" {
 		evalCancelTask(s, m)
+		return
+	}
+	if m.Content == "!매칭상태" {
+		state := matchClient.MatchState()
+
 		return
 	}
 }
@@ -129,6 +134,11 @@ func sendCommandDetail(s *discordgo.Session, m *discordgo.MessageCreate) {
 		"평가자 등록 명령어",
 		"!평가등록" + "\n" +
 			"!평가취소",
+		)
+	commandDetailEmbed.AddField(
+		"정보 확인 명령어",
+		"!내점수" + "\n" +
+			"!매칭상태",
 		)
 	s.ChannelMessageSendEmbed(m.ChannelID, commandDetailEmbed.MessageEmbed)
 }

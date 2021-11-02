@@ -1,3 +1,3 @@
-module github.com/goyohangoyoill/Go-Piscine/match_client
+module github.com/goyohangoyoill/Go-Piscine-EvalBot/match_client
 
 go 1.17

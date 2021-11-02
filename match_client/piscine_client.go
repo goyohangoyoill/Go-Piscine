@@ -45,7 +45,7 @@ func (mc *MatchClient) MyGrade(uid string) (grades EmbedInfo) {
 }
 
 // MatchState 함수는 uid 를 인자로 받아 해당 유저의 매칭 상태와 현재 대기중인 평가자/피평가자 수를 리턴하는 함수이다.
-func (mc *MatchClient) MatchState(uid string) (matchState EmbedInfo) {
+func (mc *MatchClient) MatchState() (matchState EmbedInfo) {
 	return
 }
 
