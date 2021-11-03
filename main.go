@@ -56,9 +56,13 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 	if m.Content == "!제출" {
-		s.ChannelMessageSend(m.ChannelID, "제출 명령어는 다음과 같이 입력해야 합니다.\n" +
+		submitEmbed := embed.NewEmbed()
+		submitEmbed.SetTitle("제출 명령어는 다음과 같이 입력해야 합니다.")
+		submitEmbed.AddField(
+			"<명령어 예시>",
 			"!제출 <github repo url> <subject name>\n" +
-			"!제출 https://github.com/example123/ExampleRepo Day01")
+				"!제출 https://github.com/example123/ExampleRepo Day01")
+		s.ChannelMessageSendEmbed(m.ChannelID, submitEmbed.MessageEmbed)
 		return
 	}
 	if strings.HasPrefix(m.Content, "!제출 ") {	// !제출 <github repo url> <subject name>
@@ -155,8 +159,13 @@ func submissionTask(s *discordgo.Session, m *discordgo.MessageCreate) {
 	command := strings.Split(m.Content, " ")
 	matchedUserID := make(chan mc.MatchInfo, 2)
 	if len(command) != 3 {
-		s.ChannelMessageSend(m.ChannelID, "제출 명령어는 다음과 같이 입력해야 합니다.\n" +
+		submitEmbed := embed.NewEmbed()
+		submitEmbed.SetTitle("제출 명령어는 다음과 같이 입력해야 합니다.")
+		submitEmbed.AddField(
+			"<명령어 예시>",
+			"!제출 <github repo url> <subject name>\n" +
 			"!제출 https://github.com/example123/ExampleRepo Day01")
+		s.ChannelMessageSendEmbed(m.ChannelID, submitEmbed.MessageEmbed)
 		return
 	}
 	msg := matchClient.Submit(command[2], m.Author.ID, command[1], matchedUserID)

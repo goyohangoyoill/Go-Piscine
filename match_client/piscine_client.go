@@ -35,26 +35,26 @@ func NewMatchClient() (ret *MatchClient) {
 // 서브젝트 제출을 수행하고 작업이 성공적으로 이루어졌는지 여부를 알리는 msg 를 반환하는 함수이다.
 // Eval Queue 에 사용자가 있는지 Mutex 를 걸고 확인한 후에 있다면 매칭을 진행해야한다. ** MUTEX 활용 필수!!
 func (mc *MatchClient) Submit(sid, uid, url string, matchedUserId chan MatchInfo) (msg string) {
-	return ""
+	return "제출완료"
 }
 
 // SubmitCancel 함수는 uid 를 인자로 받아 해당 유저의 제출을 취소하는 함수이다.
 // 제출 취소의 성공/실패 여부를 msg 로 리턴한다.
 func (mc *MatchClient) SubmitCancel(uid string) (msg string) {
-	return ""
+	return "취소완료"
 }
 
 // RegisterEval 함수는 uid 와 매칭된 상대방의 UID 를 공유할 matchedUserId channel 을 인자로 받아
 // 평가 등록을 수행하고 작업이 성공적으로 이루어졌는지 여부를 알리는 msg 를 반환하는 함수이다.
 // Submit Queue 에 사용자가 있는지 Mutex 를 걸고 확인한 후에 있다면 매칭을 진행해야한다. ** MUTEX 활용 필수!!
 func (mc *MatchClient) RegisterEval(uid string, matchedUid chan MatchInfo) (msg string) {
-	return ""
+	return "평가등록완료"
 }
 
 // EvalCancel 함수는 uid 를 인자로 받아 해당 유저의 평가 등록을 취소하는 함수이다.
 // 평가 등록 취소의 성공/실패 여부를 msg 로 리턴한다.
 func (mc *MatchClient) EvalCancel(sid, uid string) (msg string) {
-	return ""
+	return "평가취소완료"
 }
 
 // MyGrade 함수는 uid 를 인자로 받아 해당 유저의 점수 정보를 리턴하는 함수이다.
