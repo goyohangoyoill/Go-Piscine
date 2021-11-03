@@ -1,4 +1,4 @@
-module piscine-golang-eval-bot
+module piscine-golang-interact
 
 go 1.17
 

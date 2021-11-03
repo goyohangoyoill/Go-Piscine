@@ -1,6 +1,6 @@
 package main
 
-// Pisicne Golang Eval Bot 은 42서울 해커톤 Go? Ahead! 팀의 평가 매칭 시스템을 서포트하기 위한
+// Pisicne Golang Interact 는 42서울 해커톤 Go? Ahead! 팀의 평가 매칭 시스템을 서포트하기 위한
 // Discord Bot 서버를 구동하는 프로젝트입니다.
 
 import (
@@ -11,7 +11,7 @@ import (
 	"strings"
 	"syscall"
 
-	"piscine-golang-eval-bot/client"
+	"piscine-golang-interact/client"
 
 	"github.com/bwmarrin/discordgo"
 	embed "github.com/clinet/discordgo-embed"
