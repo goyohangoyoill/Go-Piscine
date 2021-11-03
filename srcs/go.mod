@@ -1,11 +1,10 @@
-module github.com/goyohangoyoill/Go-Piscine-EvalBot
+module piscine-golang-eval-bot
 
 go 1.17
 
 require (
 	github.com/bwmarrin/discordgo v0.23.2
 	github.com/clinet/discordgo-embed v0.0.0-20190411043415-d754bc1a576c
-	github.com/goyohangoyoill/Go-Piscine-EvalBot/match_client v0.0.0-20211103062323-1e4bfee66e1c
 )
 
 require (
