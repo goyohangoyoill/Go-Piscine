@@ -51,14 +51,14 @@ func Connection() error {
 		deleted_at DATETIME
 		) ;`)
 	_, _ = DB.Exec(`CREATE TABLE IF NOT EXISTS evaluation (
-		id int NOT NULL PRIMARY KEY UNIQUE,
+		id int NOT NULL AUTO_INCREMENT PRIMARY KEY UNIQUE,
 		interviewee_id int NOT NULL,
 		interviewer_id int NOT NULL,
 		course int NOT NULL,
 		score int NOT NULL,
 		pass int DEFAULT 0,
-		created_at date,
-		updated_at date,
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 		deleted_at date,
 		FOREIGN KEY (interviewee_id) REFERENCES people(id),
 		FOREIGN KEY (interviewer_id) REFERENCES people(id)
