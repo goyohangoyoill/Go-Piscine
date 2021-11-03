@@ -4,7 +4,7 @@ package main
 // Discord Bot 서버를 구동하는 프로젝트입니다.
 
 import (
-	"flag"
+	// "flag"
 	"fmt"
 	"os"
 	"os/signal"
@@ -15,22 +15,24 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	embed "github.com/clinet/discordgo-embed"
+	"github.com/spf13/viper"
 )
 
-var (
-	c *client.Client
-	// Token 은 해당 디스코드 봇의 토큰 값입니다.
-	Token string
-)
+var c *client.Client
 
 func init() {
 	c = client.NewClient()
-	flag.StringVar(&Token, "t", "", "Bot Token")
-	flag.Parse()
+	viper.SetConfigName("config")
+	viper.SetConfigType("json")
+	viper.AddConfigPath("./secret")
+	viper.AddConfigPath("../secret")
+	if err := viper.ReadInConfig(); err != nil {
+		fmt.Println("Viper Loading Failed")
+	}
 }
 
 func main() {
-	dg, err := discordgo.New("Bot " + Token)
+	dg, err := discordgo.New("Bot " + (viper.Get("BOT_TOKEN")).(string))
 	if err != nil {
 		fmt.Println("error creating Discord session,", err)
 		return
