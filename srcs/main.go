@@ -101,10 +101,12 @@ func sendEmbedPretty(s *discordgo.Session, cid string, info client.EmbedInfo) {
 	fields := info.EmbedRows()
 	for _, row := range fields {
 		name := row.Name()
+		lines := row.Lines()
 		value := ""
-		for _, line := range row.Lines() {
-			value += line + "\n"
+		for i := 0 ; i < len(lines) - 1 ; i ++ {
+			value += lines[i] + "\n"
 		}
+		value += lines[len(lines)-1]
 		answer.AddField(name, value)
 	}
 	s.ChannelMessageSendEmbed(cid, answer.MessageEmbed)

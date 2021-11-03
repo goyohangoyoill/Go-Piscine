@@ -11,9 +11,6 @@ type MatchInfo struct {
 	Code          bool
 	InterviewerID string
 	IntervieweeID string
-	SubjectName   string
-	SubjectURL    string
-	EvalGuideURL  string
 }
 
 // Client 구조체는 각 go-piscine 서브젝트의 평가 매칭을 관리하는 오브젝트이다.
@@ -57,13 +54,13 @@ func (c *Client) RegisterCancel(sid, uid string) (msg string) {
 	return "평가취소완료"
 }
 
-// MyGrade 함수는 uid 를 인자로 받아 해당 유저의 점수 정보를 리턴하는 함수이다.
-func (c *Client) MyGrade(uid string) (grades EmbedInfo) {
+// MatchState 함수는 uid 를 인자로 받아 해당 유저의 매칭 상태와 현재 대기중인 평가자/피평가자 수를 리턴하는 함수이다.
+func (c *Client) MatchState() (matchState EmbedInfo) {
 	return
 }
 
-// MatchState 함수는 uid 를 인자로 받아 해당 유저의 매칭 상태와 현재 대기중인 평가자/피평가자 수를 리턴하는 함수이다.
-func (c *Client) MatchState() (matchState EmbedInfo) {
+// MyGrade 함수는 uid 를 인자로 받아 해당 유저의 점수 정보를 리턴하는 함수이다.
+func (c *Client) MyGrade(uid string) (grades EmbedInfo) {
 	return
 }
 
