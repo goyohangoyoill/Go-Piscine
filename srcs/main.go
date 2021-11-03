@@ -12,6 +12,7 @@ import (
 	"syscall"
 
 	"piscine-golang-interact/client"
+	"piscine-golang-interact/record"
 
 	"github.com/bwmarrin/discordgo"
 	embed "github.com/clinet/discordgo-embed"
@@ -32,6 +33,10 @@ func init() {
 }
 
 func main() {
+	if err := record.Connection(); err != nil {
+		fmt.Println("error creating DB connection", err)
+		return
+	}
 	dg, err := discordgo.New("Bot " + (viper.Get("BOT_TOKEN")).(string))
 	if err != nil {
 		fmt.Println("error creating Discord session,", err)
