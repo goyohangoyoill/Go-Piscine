@@ -1,5 +1,9 @@
 package client
 
+import (
+	"piscine-golang-interact/record"
+)
+
 // MatchInfo 구조체는 평가 매칭이 성공했을 때 전달하는 평가 정보 구조체이다.
 type MatchInfo struct {
 	// Code 는 매칭 성공시 true, 매칭 취소시 false 이다.
@@ -16,7 +20,7 @@ type MatchInfo struct {
 	EvalGuideURL  string
 }
 
-// Client 구조체는 각 go-piscine 서브젝트의 평가 매칭을 관리하는 오브젝트이다.
+// Client 구조체는 Piscine Golang 서브젝트의 평가 매칭을 관리하는 오브젝트이다.
 type Client struct {
 	// MatchMap 은 uid 를 key 로 하여,
 	// 해당 유저가 매칭 성공시에 상대의 uid 를 받기 위한 채널을 value 로 한다.
@@ -28,6 +32,29 @@ func NewClient() (ret *Client) {
 	ret = &Client{}
 	ret.MatchMap = make(map[string]chan MatchInfo)
 	return ret
+}
+
+// SignUp 함수는 uid(userID) intraID를 받아 DB 에 추가하는 함수이다.
+// DB 에 추가하기 전에 기존에 가입된 intraID라면 가입이 되지 않는다.
+func (c *Client) SignUp(uid, name string) (msg string) {
+	tx, tErr := record.DB.Begin()
+	if tErr != nil {
+		return "가입오류: 트랜잭션 초기화"
+	}
+	defer tx.Rollback()
+	if _, qErr := tx.Query(`SELECT id FROM people WHERE name = $1 ;`, name); qErr != nil {
+		if _, eErr := tx.Exec(`INSERT INTO people ( name, password ) VALUES ( ?, ? ) ;`, name, uid); eErr != nil {
+			return "가입오류: 생성 실패"
+		}
+	} else {
+		return "가입오류: 기존 사용자"
+	}
+	tErr = tx.Commit()
+	if tErr != nil {
+		return "가입오류: 트랜잭션 적용"
+	} else {
+		return "가입 완료"
+	}
 }
 
 // Submit 함수는 sid(subject id) uid(userID) url(github repo link)와
@@ -69,7 +96,27 @@ func (c *Client) MatchState() (matchState EmbedInfo) {
 
 // FindIntraByUID 함수는 uid 를 인자로 받아 intraID 를 반환하는 함수이다.
 func (c *Client) FindIntraByUID(uid string) (intraID string) {
-	return
+	tx, tErr := record.DB.Begin()
+	if tErr != nil {
+		return "트랜잭션 초기화 오류"
+	}
+	defer tx.Rollback()
+	if rows, qErr := tx.Query(`SELECT name FROM people WHERE password = $1 ;`, uid); qErr != nil {
+		return "가입되지 않은 사용자"
+	} else {
+		for rows.Next() {
+			if sErr := rows.Scan(&intraID); sErr != nil {
+				return "잘못된 참조"
+			}
+		}
+		rows.Close()
+	}
+	tErr = tx.Commit()
+	if tErr != nil {
+		return "트랜잭션 적용 오류"
+	} else {
+		return
+	}
 }
 
 // EmbedRow 구조체는 name 과 lines 를 가진다.
