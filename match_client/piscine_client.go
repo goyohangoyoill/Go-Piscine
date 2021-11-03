@@ -7,11 +7,13 @@ type MatchInfo struct {
 	// IntervieweeID 는 피평가자의 uid 이다.
 	// SubjectName 는 Subject 의 이름이다.
 	// SubjectURL 는 해당 서브젝트의 공식 문서 url 이다.
+	// EvalGuideURL 은 해당 서브젝트 평가표의 url 이다.
 	Code bool
 	InterviewerID string
 	IntervieweeID string
 	SubjectName string
 	SubjectURL string
+	EvalGuideURL string
 }
 
 // MatchClient 구조체는 각 go-piscine 서브젝트의 평가 매칭을 관리하는 오브젝트이다.

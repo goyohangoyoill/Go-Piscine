@@ -105,7 +105,8 @@ func sendEmbedPretty(s *discordgo.Session, cid string, info mc.EmbedInfo) {
 
 func registerEvalTask(s *discordgo.Session, m *discordgo.MessageCreate) {
 	matchedUserID := make(chan mc.MatchInfo)
-	matchClient.RegisterEval(m.Author.ID, matchedUserID)
+	msg := matchClient.RegisterEval(m.Author.ID, matchedUserID)
+	s.ChannelMessageSend(m.ChannelID, msg)
 	switch evalInfo := <- matchedUserID; evalInfo.Code {
 	case false:
 		close(matchedUserID)
@@ -122,6 +123,10 @@ func registerEvalTask(s *discordgo.Session, m *discordgo.MessageCreate) {
 			evalInfo.SubjectName + "\n" +
 			evalInfo.SubjectURL,
 			)
+		matchSuccessEmbed.AddField(
+			"평가표 링크:",
+			evalInfo.EvalGuideURL,
+			)
 		s.ChannelMessageSendEmbed(dmChan.ID, matchSuccessEmbed.MessageEmbed)
 	}
 }
@@ -129,6 +134,7 @@ func registerEvalTask(s *discordgo.Session, m *discordgo.MessageCreate) {
 func evalCancelTask(s *discordgo.Session, m *discordgo.MessageCreate) {
 	userChannel := matchClient.MatchMap[m.Author.ID]
 	if userChannel == nil {
+		s.ChannelMessageSend(m.ChannelID, "현재 평가 등록을 하지 않은 사용자입니다.")
 		return
 	}
 	userChannel <- mc.MatchInfo{Code: false}
@@ -137,6 +143,7 @@ func evalCancelTask(s *discordgo.Session, m *discordgo.MessageCreate) {
 func submissionCancelTask(s *discordgo.Session, m *discordgo.MessageCreate) {
 	userChannel := matchClient.MatchMap[m.Author.ID]
 	if userChannel == nil {
+		s.ChannelMessageSend(m.ChannelID, "현재 제출을 하지 않은 사용자입니다.")
 		return
 	}
 	userChannel <- mc.MatchInfo{Code: false}
