@@ -131,7 +131,7 @@ func evalCancelTask(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if userChannel == nil {
 		return
 	}
-	userChannel <- mc.MatchInfo{Code: false}\
+	userChannel <- mc.MatchInfo{Code: false}
 }
 
 func submissionCancelTask(s *discordgo.Session, m *discordgo.MessageCreate) {
