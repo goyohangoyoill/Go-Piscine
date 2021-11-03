@@ -1,16 +1,30 @@
 package match_client
 
+// MatchInfo 구조체는 평가 매칭이 성공했을 때 전달하는 평가 정보 구조체이다.
+type MatchInfo struct {
+	// Code 는 매칭 성공시 true, 매칭 취소시 false 이다.
+	// InterviewerID 는 평가자의 uid 이다.
+	// IntervieweeID 는 피평가자의 uid 이다.
+	// SubjectName 는 Subject 의 이름이다.
+	// SubjectURL 는 해당 서브젝트의 공식 문서 url 이다.
+	Code bool
+	InterviewerID string
+	IntervieweeID string
+	SubjectName string
+	SubjectURL string
+}
+
 // MatchClient 구조체는 각 go-piscine 서브젝트의 평가 매칭을 관리하는 오브젝트이다.
 type MatchClient struct {
 	// MatchMap 은 uid 를 key 로 하여,
 	// 해당 유저가 매칭 성공시에 상대의 uid 를 받기 위한 채널을 value 로 한다.
-	MatchMap map[string]chan string
+	MatchMap map[string]chan MatchInfo
 }
 
 // NewMatchClient 함수는 MatchClient 구조체의 생성자이다.
 func NewMatchClient() (ret *MatchClient) {
 	ret = &MatchClient{}
-	ret.MatchMap = make(map[string]chan string)
+	ret.MatchMap = make(map[string]chan MatchInfo)
 	return ret
 }
 
@@ -18,7 +32,7 @@ func NewMatchClient() (ret *MatchClient) {
 // 매칭된 상대방의 UID 를 공유할 matchedUserId channel 을 인자로 받아
 // 서브젝트 제출을 수행하고 작업이 성공적으로 이루어졌는지 여부를 알리는 msg 를 반환하는 함수이다.
 // Eval Queue 에 사용자가 있는지 Mutex 를 걸고 확인한 후에 있다면 매칭을 진행해야한다. ** MUTEX 활용 필수!!
-func (mc *MatchClient) Submit(sid, uid, url string, matchedUserId chan string) (msg string) {
+func (mc *MatchClient) Submit(sid, uid, url string, matchedUserId chan MatchInfo) (msg string) {
 	return ""
 }
 
@@ -31,7 +45,7 @@ func (mc *MatchClient) SubmitCancel(uid string) (msg string) {
 // RegisterEval 함수는 uid 와 매칭된 상대방의 UID 를 공유할 matchedUserId channel 을 인자로 받아
 // 평가 등록을 수행하고 작업이 성공적으로 이루어졌는지 여부를 알리는 msg 를 반환하는 함수이다.
 // Submit Queue 에 사용자가 있는지 Mutex 를 걸고 확인한 후에 있다면 매칭을 진행해야한다. ** MUTEX 활용 필수!!
-func (mc *MatchClient) RegisterEval(uid string, matchedUid chan string) (msg string) {
+func (mc *MatchClient) RegisterEval(uid string, matchedUid chan MatchInfo) (msg string) {
 	return ""
 }
 

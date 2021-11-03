@@ -55,7 +55,13 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		sendCommandDetail(s, m)
 		return
 	}
-	if strings.HasPrefix(m.Content, "!제출 ") {	// !제출 <github repo url> <subject #>
+	if m.Content == "!제출" {
+		s.ChannelMessageSend(m.ChannelID, "제출 명령어는 다음과 같이 입력해야 합니다.\n" +
+			"!제출 <github repo url> <subject name>\n" +
+			"!제출 https://github.com/example123/ExampleRepo Day01")
+		return
+	}
+	if strings.HasPrefix(m.Content, "!제출 ") {	// !제출 <github repo url> <subject name>
 		submissionTask(s, m)
 		return
 	}
@@ -94,14 +100,38 @@ func sendEmbedPretty(s *discordgo.Session, cid string, info mc.EmbedInfo) {
 		}
 		answer.AddField(name, value)
 	}
-}
-
-func evalCancelTask(s *discordgo.Session, m *discordgo.MessageCreate) {
-	// TODO: 평가자 등록 해제 태스크 수행
+	s.ChannelMessageSendEmbed(cid, answer.MessageEmbed)
 }
 
 func registerEvalTask(s *discordgo.Session, m *discordgo.MessageCreate) {
-	// TODO: 평가 등록 태스크 수행.
+	matchedUserID := make(chan mc.MatchInfo)
+	matchClient.RegisterEval(m.Author.ID, matchedUserID)
+	switch evalInfo := <- matchedUserID; evalInfo.Code {
+	case false:
+		close(matchedUserID)
+	case true:
+		dmChan, _ := s.UserChannelCreate(m.Author.ID)
+		matchSuccessEmbed := embed.NewEmbed()
+		matchSuccessEmbed.SetTitle("평가 매칭 성공!")
+		matchSuccessEmbed.AddField(
+			"피평가자 intra ID:",
+			 matchClient.FindIntraByUID(evalInfo.IntervieweeID),
+			)
+		matchSuccessEmbed.AddField(
+			"평가할 서브젝트:",
+			evalInfo.SubjectName + "\n" +
+			evalInfo.SubjectURL,
+			)
+		s.ChannelMessageSendEmbed(dmChan.ID, matchSuccessEmbed.MessageEmbed)
+	}
+}
+
+func evalCancelTask(s *discordgo.Session, m *discordgo.MessageCreate) {
+	userChannel := matchClient.MatchMap[m.Author.ID]
+	if userChannel == nil {
+		return
+	}
+	userChannel <- mc.MatchInfo{Code: false}\
 }
 
 func submissionCancelTask(s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -109,26 +139,33 @@ func submissionCancelTask(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if userChannel == nil {
 		return
 	}
-	userChannel <- "CANCEL"
+	userChannel <- mc.MatchInfo{Code: false}
 }
 
 func submissionTask(s *discordgo.Session, m *discordgo.MessageCreate) {
 	command := strings.Split(m.Content, " ")
-	matchedUserID := make(chan string)
-	for _, item := range command {
-		fmt.Println(item)
+	matchedUserID := make(chan mc.MatchInfo)
+	if len(command) != 3 {
+		s.ChannelMessageSend(m.ChannelID, "제출 명령어는 다음과 같이 입력해야 합니다.\n" +
+			"!제출 https://github.com/example123/ExampleRepo Day01")
+		return
 	}
 	matchClient.Submit(command[2], m.Author.ID, command[1], matchedUserID)
-	switch matchedInterviewerID := <-matchedUserID; matchedInterviewerID {
-	case "CANCEL":
+	switch evalInfo := <- matchedUserID; evalInfo.Code {
+	case false:
 		close(matchedUserID)
-	default:
+	case true:
 		dmChan, _ := s.UserChannelCreate(m.Author.ID)
 		matchSuccessEmbed := embed.NewEmbed()
-		matchSuccessEmbed.SetTitle("제출된 과제 `" + command[2] + "` 의 평가 매칭 성공!")
+		matchSuccessEmbed.SetTitle("평가 매칭 성공!")
 		matchSuccessEmbed.AddField(
-			"매칭된 평가자",
-			matchClient.FindIntraByUID(matchedInterviewerID),
+			"평가자 intra ID:",
+			matchClient.FindIntraByUID(evalInfo.InterviewerID),
+		)
+		matchSuccessEmbed.AddField(
+			"평가할 서브젝트:",
+			evalInfo.SubjectName + "\n" +
+				evalInfo.SubjectURL,
 		)
 		s.ChannelMessageSendEmbed(dmChan.ID, matchSuccessEmbed.MessageEmbed)
 	}
