@@ -134,11 +134,12 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		if len(command) != 2 {
 			s.ChannelMessageSend(m.ChannelID, "사용방법: !인트라등록 <intraID>")
 		}
-		regMsg, _ := s.ChannelMessageSend(m.ChannelID, "당신의 인트라 ID 가 " + command[1] + " 이(가) 맞습니까?")
+		dmChan, _ := s.UserChannelCreate(m.Author.ID)
+		regMsg, _ := s.ChannelMessageSend(dmChan.ID, "**주의** 등록된 정보는 바꿀 수 없음!\n당신의 인트라 ID 가 " + command[1] + " 이(가) 맞습니까?")
 		MIDs[m.Author.ID] = regMsg.ID
 		IntraIDs[m.Author.ID] = command[1]
-		s.MessageReactionAdd(m.ChannelID, regMsg.ID, "⭕")
-		s.MessageReactionAdd(m.ChannelID, regMsg.ID, "❌")
+		s.MessageReactionAdd(dmChan.ID, regMsg.ID, "⭕")
+		s.MessageReactionAdd(dmChan.ID, regMsg.ID, "❌")
 	}
 
 }
