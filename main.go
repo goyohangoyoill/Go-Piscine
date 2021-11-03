@@ -104,7 +104,7 @@ func sendEmbedPretty(s *discordgo.Session, cid string, info mc.EmbedInfo) {
 }
 
 func registerEvalTask(s *discordgo.Session, m *discordgo.MessageCreate) {
-	matchedUserID := make(chan mc.MatchInfo)
+	matchedUserID := make(chan mc.MatchInfo, 2)
 	msg := matchClient.RegisterEval(m.Author.ID, matchedUserID)
 	s.ChannelMessageSend(m.ChannelID, msg)
 	switch evalInfo := <- matchedUserID; evalInfo.Code {
@@ -138,6 +138,7 @@ func evalCancelTask(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 	userChannel <- mc.MatchInfo{Code: false}
+	s.ChannelMessageSend(m.ChannelID, "정상적으로 평가 등록이 취소되었습니다.")
 }
 
 func submissionCancelTask(s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -147,17 +148,19 @@ func submissionCancelTask(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 	userChannel <- mc.MatchInfo{Code: false}
+	s.ChannelMessageSend(m.ChannelID, "정상적으로 서브젝트 제출이 취소되었습니다.")
 }
 
 func submissionTask(s *discordgo.Session, m *discordgo.MessageCreate) {
 	command := strings.Split(m.Content, " ")
-	matchedUserID := make(chan mc.MatchInfo)
+	matchedUserID := make(chan mc.MatchInfo, 2)
 	if len(command) != 3 {
 		s.ChannelMessageSend(m.ChannelID, "제출 명령어는 다음과 같이 입력해야 합니다.\n" +
 			"!제출 https://github.com/example123/ExampleRepo Day01")
 		return
 	}
-	matchClient.Submit(command[2], m.Author.ID, command[1], matchedUserID)
+	msg := matchClient.Submit(command[2], m.Author.ID, command[1], matchedUserID)
+	s.ChannelMessageSend(m.ChannelID, msg)
 	switch evalInfo := <- matchedUserID; evalInfo.Code {
 	case false:
 		close(matchedUserID)
