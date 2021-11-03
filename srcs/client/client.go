@@ -2,22 +2,28 @@ package client
 
 import (
 	"piscine-golang-interact/record"
+	"time"
 )
+
+// SubejctInfo 구조체는 서브젝트 관련 정보들을 담고 있는 구조체이다.
+type SubjectInfo struct {
+	// SubjectName 는 Subject 의 이름이다.
+	// SubjectURL 는 해당 서브젝트의 공식 문서 url 이다.
+	// EvalGuideURL 은 해당 서브젝트 평가표의 url 이다.
+	SubjectName  string
+	SubjectURL   string
+	EvalGuideURL string
+}
 
 // MatchInfo 구조체는 평가 매칭이 성공했을 때 전달하는 평가 정보 구조체이다.
 type MatchInfo struct {
 	// Code 는 매칭 성공시 true, 매칭 취소시 false 이다.
 	// InterviewerID 는 평가자의 uid 이다.
 	// IntervieweeID 는 피평가자의 uid 이다.
-	// SubjectName 는 Subject 의 이름이다.
-	// SubjectURL 는 해당 서브젝트의 공식 문서 url 이다.
-	// EvalGuideURL 은 해당 서브젝트 평가표의 url 이다.
 	Code          bool
 	InterviewerID string
 	IntervieweeID string
-	SubjectName string
-	SubjectURL string
-	EvalGuideURL string
+	SubjectInfo
 }
 
 // Client 구조체는 Piscine Golang 서브젝트의 평가 매칭을 관리하는 오브젝트이다.
@@ -84,13 +90,34 @@ func (c *Client) RegisterCancel(sid, uid string) (msg string) {
 	return "평가취소완료"
 }
 
-// MatchState 함수는 uid 를 인자로 받아 해당 유저의 매칭 상태와 현재 대기중인 평가자/피평가자 수를 리턴하는 함수이다.
-func (c *Client) MatchState() (matchState EmbedInfo) {
+// MyGrade 함수는 uid 를 인자로 받아 해당 유저의 점수 정보를 리턴하는 함수이다.
+func (c *Client) MyGrade(uid string) (grades EmbedInfo) {
+	grades.title = "서브젝트 채점 현황"
+	tx, tErr := record.DB.Begin()
+	if tErr != nil {
+		return
+	}
+	defer tx.Rollback()
+	if rows, qErr := tx.Query(`SELECT e.course, e.score, e.pass, e.updated_at FROM evaluation AS e JOIN people AS p ON e.interviewee_id = p.id WHERE p.password = $1 ;`, uid); qErr != nil {
+		return
+	} else {
+		var course int
+		var score int
+		var pass bool
+		var stamp time.Time
+		for rows.Next() {
+			if sErr := rows.Scan(&course, &score, &pass, &stamp); sErr != nil {
+				return
+			}
+		}
+		rows.Close()
+	}
+	_ = tx.Commit()
 	return
 }
 
-// MyGrade 함수는 uid 를 인자로 받아 해당 유저의 점수 정보를 리턴하는 함수이다.
-func (c *Client) MyGrade(uid string) (grades EmbedInfo) {
+// MatchState 함수는 uid 를 인자로 받아 현재 큐 정보를 리턴하는 함수이다.
+func (c *Client) MatchState() (grades EmbedInfo) {
 	return
 }
 
@@ -104,11 +131,13 @@ func (c *Client) FindIntraByUID(uid string) (intraID string) {
 	if rows, qErr := tx.Query(`SELECT name FROM people WHERE password = $1 ;`, uid); qErr != nil {
 		return "가입되지 않은 사용자"
 	} else {
-		for rows.Next() {
-			if sErr := rows.Scan(&intraID); sErr != nil {
-				return "잘못된 참조"
+		/*
+			for rows.Next() {
+				if sErr := rows.Scan(&intraID); sErr != nil {
+					return "잘못된 참조"
+				}
 			}
-		}
+		*/
 		rows.Close()
 	}
 	tErr = tx.Commit()
