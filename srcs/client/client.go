@@ -84,7 +84,7 @@ func (c *Client) SignUp(uid, name string) (msg string) {
 	}
 	defer tx.Rollback()
 	if ret, qErr := tx.Query(`SELECT id FROM people WHERE name = $1 ;`, name); ret != nil {
-		if qErr == nil {
+		if qErr != nil {
 			return "가입오류: 쿼리 실패"
 		}
 		if _, eErr := tx.Exec(`INSERT INTO people ( name, password ) VALUES ( ?, ? ) ;`, name, uid); eErr != nil {
@@ -107,8 +107,8 @@ func (c *Client) ModifyId(uid, name string) (msg string) {
 		return "인트라 ID 수정오류: 트랜잭션 초기화"
 	}
 	defer tx.Rollback()
-	if ret, qErr := tx.Query(`SELECT id FROM people WHERE name = $1 ;`, name); ret != nil {
-		if qErr == nil {
+	if ret, qErr := tx.Query(`SELECT id FROM people WHERE password = $1 ;`, uid); qErr == nil {
+		if qErr != nil {
 			return "인트라 ID 수정오류: 쿼리 실패"
 		}
 		if _, eErr := tx.Exec(`update people set name=? where password=? ;`, name, uid); eErr != nil {
