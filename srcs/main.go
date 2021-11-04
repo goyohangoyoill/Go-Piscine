@@ -140,7 +140,6 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		s.MessageReactionAdd(dmChan.ID, regMsg.ID, "⭕")
 		s.MessageReactionAdd(dmChan.ID, regMsg.ID, "❌")
 	}
-
 }
 
 func sendEmbedPretty(s *discordgo.Session, cid string, info client.EmbedInfo) {
