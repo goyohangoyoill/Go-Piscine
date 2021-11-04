@@ -1,6 +1,7 @@
 package client
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
@@ -121,8 +122,9 @@ func (c *Client) MyGrade(uid string) (grades EmbedInfo) {
 			} else {
 				tempLines = append(tempLines, "FAIL")
 			}
+			time := fmt.Sprintf("%d-%02d-%02d %02d:%02d:%02d\n", stamp.Year(), stamp.Month(), stamp.Day(), stamp.Hour(), stamp.Minute(), stamp.Second())
+			tempLines = append(tempLines, "Time: "+time)
 			grades.embedRows = append(grades.embedRows, EmbedRow{name: SubjectNumMap[course], lines: tempLines})
-
 		}
 		rows.Close()
 	}
