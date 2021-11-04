@@ -20,13 +20,15 @@ import (
 
 var (
 	c        *client.Client
-	MIDs     map[string]string
+	rMIDs    map[string]string
+	mMIDs    map[string]string
 	IntraIDs map[string]string
 	mode     = false
 )
 
 func init() {
-	MIDs = make(map[string]string)
+	rMIDs = make(map[string]string)
+	mMIDs = make(map[string]string)
 	IntraIDs = make(map[string]string)
 	c = client.NewClient()
 }
@@ -56,21 +58,33 @@ func main() {
 }
 
 func messageReactionAdd(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
-	if MIDs[r.UserID] == "" {
+	if rMIDs[r.UserID] == "" && mMIDs[r.UserID] == "" {
 		return
 	}
-	mid := MIDs[r.UserID]
-	if mid != r.MessageID {
+	mid := rMIDs[r.UserID]
+	if mid == r.MessageID {
+		switch r.Emoji.Name {
+		case "⭕":
+			s.ChannelMessageDelete(r.ChannelID, r.MessageID)
+			msg := c.SignUp(r.UserID, IntraIDs[r.UserID])
+			s.ChannelMessageSend(r.ChannelID, msg)
+		case "❌":
+			s.ChannelMessageDelete(r.ChannelID, r.MessageID)
+			s.ChannelMessageSend(r.ChannelID, "등록을 취소하셨습니다.")
+		}
 		return
 	}
-	switch r.Emoji.Name {
-	case "⭕":
-		s.ChannelMessageDelete(r.ChannelID, r.MessageID)
-		msg := c.SignUp(r.UserID, IntraIDs[r.UserID])
-		s.ChannelMessageSend(r.ChannelID, msg)
-	case "❌":
-		s.ChannelMessageDelete(r.ChannelID, r.MessageID)
-		s.ChannelMessageSend(r.ChannelID, "등록을 취소하셨습니다.")
+	if mid == r.MessageID {
+		switch r.Emoji.Name {
+		case "⭕":
+			s.ChannelMessageDelete(r.ChannelID, r.MessageID)
+			msg := c.ModifyId(r.UserID, IntraIDs[r.UserID])
+			s.ChannelMessageSend(r.ChannelID, msg)
+		case "❌":
+			s.ChannelMessageDelete(r.ChannelID, r.MessageID)
+			s.ChannelMessageSend(r.ChannelID, "수정을 취소하셨습니다.")
+		}
+		return
 	}
 }
 
@@ -135,8 +149,24 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			return
 		}
 		dmChan, _ := s.UserChannelCreate(m.Author.ID)
-		regMsg, _ := s.ChannelMessageSend(dmChan.ID, "**주의** 등록된 정보는 바꿀 수 없음!\n당신의 인트라 ID 가 "+command[1]+" 이(가) 맞습니까?")
-		MIDs[m.Author.ID] = regMsg.ID
+		regMsg, _ := s.ChannelMessageSend(dmChan.ID, "**주의** 등록된 정보는 등록 기간이 지나면 바꿀 수 없음!\n" +
+			"등록된 인트라 ID 를 바꾸고 싶다면 !인트라수정 명령어를 사용하세요\n" +
+			"당신의 인트라 ID 가 "+command[1]+" 이(가) 맞습니까?")
+		rMIDs[m.Author.ID] = regMsg.ID
+		IntraIDs[m.Author.ID] = command[1]
+		s.MessageReactionAdd(dmChan.ID, regMsg.ID, "⭕")
+		s.MessageReactionAdd(dmChan.ID, regMsg.ID, "❌")
+	}
+	if mode && strings.HasPrefix(m.Content, "!인트라수정") {
+		command := strings.Split(m.Content, " ")
+		if len(command) != 2 {
+			s.ChannelMessageSend(m.ChannelID, "사용방법: !인트라수정 <intraID>")
+			return
+		}
+		dmChan, _ := s.UserChannelCreate(m.Author.ID)
+		regMsg, _ := s.ChannelMessageSend(dmChan.ID, "**주의** 등록된 정보는 등록 기간이 지나면 바꿀 수 없음!\n" +
+			"당신의 인트라 ID 가 "+command[1]+" 이(가) 맞습니까?")
+		mMIDs[m.Author.ID] = regMsg.ID
 		IntraIDs[m.Author.ID] = command[1]
 		s.MessageReactionAdd(dmChan.ID, regMsg.ID, "⭕")
 		s.MessageReactionAdd(dmChan.ID, regMsg.ID, "❌")
