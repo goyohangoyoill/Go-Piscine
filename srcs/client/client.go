@@ -46,7 +46,7 @@ func NewClient() (ret *Client) {
 }
 
 // SignUp 함수는 uid(userID) intraID를 받아 DB 에 추가하는 함수이다.
-// DB 에 추가하기 전에 기존에 가입된 intraID라면 가입이 되지 않는다.
+// DB 에 추가하기 전에 기존에 가입된 intraID 라면 가입이 되지 않는다.
 func (c *Client) SignUp(uid, name string) (msg string) {
 	tx, tErr := record.DB.Begin()
 	if tErr != nil {
@@ -130,8 +130,8 @@ func (c *Client) MyGrade(uid string) (grades EmbedInfo) {
 	return
 }
 
-// MatchState 함수는 uid 를 인자로 받아 해당 유저의 매칭 상태와 현재 대기중인 평가자/피평가자 수를 리턴하는 함수이다.
-func (c *Client) MatchState() (matchState EmbedInfo) {
+// MatchState 함수는 uid 를 인자로 받아 현재 큐 정보를 리턴하는 함수이다.
+func (c *Client) MatchState() (grades EmbedInfo) {
 	return
 }
 

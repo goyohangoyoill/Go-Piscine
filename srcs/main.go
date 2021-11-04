@@ -19,9 +19,16 @@ import (
 	"github.com/spf13/viper"
 )
 
-var c *client.Client
+var (
+	c *client.Client
+	MIDs map[string]string
+	IntraIDs map[string]string
+	mode = false
+)
 
 func init() {
+	MIDs = make(map[string]string)
+	IntraIDs = make(map[string]string)
 	c = client.NewClient()
 	viper.SetConfigName("config")
 	viper.SetConfigType("json")
@@ -43,6 +50,7 @@ func main() {
 		return
 	}
 	dg.AddHandler(messageCreate)
+	dg.AddHandler(messageReactionAdd)
 	err = dg.Open()
 	if err != nil {
 		fmt.Println("error opening connection,", err)
@@ -53,6 +61,25 @@ func main() {
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-sc
 	dg.Close()
+}
+
+func messageReactionAdd(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
+	if MIDs[r.UserID] == "" {
+		return
+	}
+	mid := MIDs[r.UserID]
+	if mid != r.MessageID {
+		return
+	}
+	switch r.Emoji.Name {
+	case "⭕":
+		s.ChannelMessageDelete(r.ChannelID, r.MessageID)
+		msg := c.SignUp(r.UserID, IntraIDs[r.UserID])
+		s.ChannelMessageSend(r.ChannelID, msg)
+	case "❌":
+		s.ChannelMessageDelete(r.ChannelID, r.MessageID)
+		s.ChannelMessageSend(r.ChannelID, "등록을 취소하셨습니다.")
+	}
 }
 
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -97,7 +124,24 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if m.Content == "!내점수" {
 		grade := c.MyGrade(m.Author.ID)
 		sendEmbedPretty(s, m.ChannelID, grade)
+		return
 	}
+	if m.Content == "!GOPISCINEREGISTERMODE" && m.Author.ID == "318743234601811969" {
+		mode = !mode
+	}
+	if mode && strings.HasPrefix(m.Content, "!인트라등록") {
+		command := strings.Split(m.Content, " ")
+		if len(command) != 2 {
+			s.ChannelMessageSend(m.ChannelID, "사용방법: !인트라등록 <intraID>")
+		}
+		dmChan, _ := s.UserChannelCreate(m.Author.ID)
+		regMsg, _ := s.ChannelMessageSend(dmChan.ID, "**주의** 등록된 정보는 바꿀 수 없음!\n당신의 인트라 ID 가 " + command[1] + " 이(가) 맞습니까?")
+		MIDs[m.Author.ID] = regMsg.ID
+		IntraIDs[m.Author.ID] = command[1]
+		s.MessageReactionAdd(dmChan.ID, regMsg.ID, "⭕")
+		s.MessageReactionAdd(dmChan.ID, regMsg.ID, "❌")
+	}
+
 }
 
 func sendEmbedPretty(s *discordgo.Session, cid string, info client.EmbedInfo) {
@@ -106,10 +150,12 @@ func sendEmbedPretty(s *discordgo.Session, cid string, info client.EmbedInfo) {
 	fields := info.EmbedRows()
 	for _, row := range fields {
 		name := row.Name()
+		lines := row.Lines()
 		value := ""
-		for _, line := range row.Lines() {
-			value += line + "\n"
+		for i := 0 ; i < len(lines) - 1 ; i ++ {
+			value += lines[i] + "\n"
 		}
+		value += lines[len(lines)-1]
 		answer.AddField(name, value)
 	}
 	s.ChannelMessageSendEmbed(cid, answer.MessageEmbed)
