@@ -178,6 +178,23 @@ func (c *Client) MyGrade(uid string) (grades EmbedInfo) {
 	return
 }
 
+func matchEmbedRow(m *sync.Mutex, s string, p *map[string]string, l *[]string) EmbedRow {
+	tempEmbedRow := EmbedRow{name: s}
+	tempLines := make([]string, 0, 100)
+	m.Lock()
+	for _, v := range *l {
+		if i, ok := (*p)[v]; ok {
+			tempLines = append(tempLines, i)
+		}
+	}
+	m.Unlock()
+	if len(tempLines) == 0 {
+		tempLines = append(tempLines, "대기열 없음")
+	}
+	tempEmbedRow.lines = tempLines
+	return tempEmbedRow
+}
+
 // MatchState 함수는 uid 를 인자로 받아 현재 큐 정보를 리턴하는 함수이다.
 func (c *Client) MatchState() (grades EmbedInfo) {
 	grades.title = "평가 및 피평가 매칭 현황"
@@ -204,24 +221,8 @@ func (c *Client) MatchState() (grades EmbedInfo) {
 	if tErr != nil {
 		return
 	} else {
-		tempLines := make([]string, 0, 100)
-		InterviewerMutex.Lock()
-		for _, v := range InterviewerList {
-			if i, ok := people[v]; ok {
-				tempLines = append(tempLines, i)
-			}
-		}
-		InterviewerMutex.Unlock()
-		grades.embedRows = append(grades.embedRows, EmbedRow{name: "평가자", lines: tempLines})
-		tempLines = make([]string, 0, 100)
-		IntervieweeMutex.Lock()
-		for _, v := range IntervieweeList {
-			if i, ok := people[v]; ok {
-				tempLines = append(tempLines, i)
-			}
-		}
-		InterviewerMutex.Unlock()
-		grades.embedRows = append(grades.embedRows, EmbedRow{name: "피평가자", lines: tempLines})
+		grades.embedRows = append(grades.embedRows, matchEmbedRow(&InterviewerMutex, "평가자", &people, &InterviewerList))
+		grades.embedRows = append(grades.embedRows, matchEmbedRow(&IntervieweeMutex, "피평가자", &people, &IntervieweeList))
 		return
 	}
 }
