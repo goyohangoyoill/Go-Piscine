@@ -1,9 +1,14 @@
 package client
 
 import (
-	"piscine-golang-interact/record"
+	"strconv"
 	"time"
+
+	"piscine-golang-interact/record"
 )
+
+var SubjectNumMap map[int]string = map[int]string{0: "Day00", 1: "Day01", 2: "Day02", 3: "Day03", 4: "Day04", 5: "Day05", 100: "Rush00"}
+var SubjectStrMap map[string]int = map[string]int{"Day00": 0, "Day01": 1, "Day02": 2, "Day03": 3, "Day04": 4, "Day05": 5, "Rush00": 100}
 
 // SubejctInfo 구조체는 서브젝트 관련 정보들을 담고 있는 구조체이다.
 type SubjectInfo struct {
@@ -109,6 +114,15 @@ func (c *Client) MyGrade(uid string) (grades EmbedInfo) {
 			if sErr := rows.Scan(&course, &score, &pass, &stamp); sErr != nil {
 				return
 			}
+			tempLines := make([]string, 3)
+			tempLines = append(tempLines, "Score: "+strconv.Itoa(score))
+			if pass {
+				tempLines = append(tempLines, "PASS")
+			} else {
+				tempLines = append(tempLines, "FAIL")
+			}
+			grades.embedRows = append(grades.embedRows, EmbedRow{name: SubjectNumMap[course], lines: tempLines})
+
 		}
 		rows.Close()
 	}
@@ -131,13 +145,11 @@ func (c *Client) FindIntraByUID(uid string) (intraID string) {
 	if rows, qErr := tx.Query(`SELECT name FROM people WHERE password = $1 ;`, uid); qErr != nil {
 		return "가입되지 않은 사용자"
 	} else {
-		/*
-			for rows.Next() {
-				if sErr := rows.Scan(&intraID); sErr != nil {
-					return "잘못된 참조"
-				}
+		for rows.Next() {
+			if sErr := rows.Scan(&intraID); sErr != nil {
+				return "잘못된 참조"
 			}
-		*/
+		}
 		rows.Close()
 	}
 	tErr = tx.Commit()
