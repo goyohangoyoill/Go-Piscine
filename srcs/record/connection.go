@@ -17,6 +17,7 @@ func preparation() (info [5]string) {
 	viper.AddConfigPath("../secret")
 	if err := viper.ReadInConfig(); err != nil {
 		fmt.Println("Viper Loading Failed")
+		return
 	}
 	info[0] = (viper.Get("DB_KIND")).(string)
 	info[1] = (viper.Get("DB_HOST")).(string)
