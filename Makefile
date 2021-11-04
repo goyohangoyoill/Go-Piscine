@@ -1,6 +1,6 @@
 NAME=interact-server
 IMAGE=zxcv9203/piscine-golang-interact
-TAG=0.1.4
+TAG=0.1.9
 
 dpull		:
 	docker pull $(IMAGE):$(TAG)

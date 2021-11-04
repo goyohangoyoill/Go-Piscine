@@ -113,7 +113,7 @@ func (c *Client) ModifyId(uid, name string) (msg string) {
 		if ret != nil {
 			return "인트라 ID 수정오류: 매칭되는 사용자가 없음"
 		}
-		if _, eErr := tx.Exec(`UPDATE people SET name = ? WHERE password = ? ;`, name, uid); eErr != nil {
+		if _, eErr := tx.Exec(`UPDATE people SET name =? WHERE password =? ;`, name, uid); eErr != nil {
 			return "인트라 ID 수정오류: 수정 실패"
 		}
 	}
