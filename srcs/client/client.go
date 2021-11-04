@@ -9,11 +9,11 @@ import (
 	"piscine-golang-interact/record"
 )
 
-// SubjectNumMap 은 sid에 따른 Subject 이름을 찾는 map 이다.
+// SubjectNumMap 은 sid 에 따른 Subject 이름을 찾는 map 이다.
 var SubjectNumMap map[int]string
 
-// SubjectStrMap 은 Subject 이름에 따른 sid를 찾는 map 이다.
-var SubjectStrMap map[string]int
+// SubjectInfoMap 은 sid 를 기반으로 해당 서브젝트의 정보 구조체를 반환하는 맵이다.
+var SubjectInfoMap map[string]SubjectInfo
 
 // IntervieweeList 는 피평가자의 uid 를 이용하는 Queue 이다.
 var IntervieweeList []string
@@ -26,7 +26,8 @@ var QueueMutex sync.Mutex
 
 func init() {
 	SubjectNumMap = map[int]string{0: "Day00", 1: "Day01", 2: "Day02", 3: "Day03", 4: "Day04", 5: "Day05", 100: "Rush00"}
-	SubjectStrMap = map[string]int{"Day00": 0, "Day01": 1, "Day02": 2, "Day03": 3, "Day04": 4, "Day05": 5, "Rush00": 100}
+	SubjectInfoMap = make(map[string]SubjectInfo)
+	InitSubject(SubjectInfoMap)
 	IntervieweeList = make([]string, 0, 100)
 	InterviewerList = make([]string, 0, 100)
 	QueueMutex = sync.Mutex{}
@@ -34,16 +35,6 @@ func init() {
 
 func removeClient(list []string, i int) []string {
 	return append(list[:i], list[i+1:]...)
-}
-
-// SubjectInfo 구조체는 서브젝트 관련 정보들을 담고 있는 구조체이다.
-type SubjectInfo struct {
-	// SubjectName 는 Subject 의 이름이다.
-	// SubjectURL 는 해당 서브젝트의 공식 문서 url 이다.
-	// EvalGuideURL 은 해당 서브젝트 평가표의 url 이다.
-	SubjectName  string
-	SubjectURL   string
-	EvalGuideURL string
 }
 
 // MatchInfo 구조체는 평가 매칭이 성공했을 때 전달하는 평가 정보 구조체이다.
@@ -54,7 +45,7 @@ type MatchInfo struct {
 	Code          bool
 	InterviewerID string
 	IntervieweeID string
-	SubjectInfo
+	Subject       SubjectInfo
 }
 
 // Client 구조체는 Piscine Golang 서브젝트의 평가 매칭을 관리하는 오브젝트이다.
@@ -62,6 +53,7 @@ type Client struct {
 	// MatchMap 은 uid 를 key 로 하여,
 	// 해당 유저가 매칭 성공시에 상대의 uid 를 받기 위한 채널을 value 로 한다.
 	MatchMap map[string]chan MatchInfo
+	SubmittedSubjectMap map[string]SubjectInfo
 }
 
 // NewClient 함수는 Client 구조체의 생성자이다.
@@ -129,18 +121,27 @@ func (c *Client) ModifyId(uid, name string) (msg string) {
 // 매칭된 상대방의 UID 를 공유할 matchedUserId channel 을 인자로 받아
 // 서브젝트 제출을 수행하고 작업이 성공적으로 이루어졌는지 여부를 알리는 msg 를 반환하는 함수이다.
 // Eval Queue 에 사용자가 있는지 Mutex 를 걸고 확인한 후에 있다면 매칭을 진행해야한다. ** MUTEX 활용 필수!!
-func (c *Client) Submit(sid, uid, url string, matchedUserId chan MatchInfo) (msg string) {
+func (c *Client) Submit(sName, uid, url string, matchedUserId chan MatchInfo) (msg string) {
 	// convertID := SubjectStrMap[sid]
 	QueueMutex.Lock()
 	defer QueueMutex.Unlock()
 	if len(InterviewerList) == 0 {
 		IntervieweeList = append(IntervieweeList, uid)
-		return "제출완료"
+		c.MatchMap[uid] = matchedUserId
+		c.SubmittedSubjectMap[uid] = SubjectInfoMap[sName]
 	} else {
-		// send to each other
+		matchedInterviewerID := InterviewerList[0]
+		myMatchInfo := MatchInfo{
+			Code: true,
+			IntervieweeID: uid,
+			InterviewerID: matchedInterviewerID,
+			Subject: SubjectInfoMap[sName],
+		}
+		c.MatchMap[matchedInterviewerID] <- myMatchInfo
+		matchedUserId <- myMatchInfo
 		InterviewerList = removeClient(InterviewerList, 0)
-		return "제출완료"
 	}
+	return "제출완료"
 }
 
 // SubmitCancel 함수는 uid 를 인자로 받아 해당 유저의 제출을 취소하는 함수이다.
@@ -165,12 +166,20 @@ func (c *Client) Register(uid string, matchedUid chan MatchInfo) (msg string) {
 	defer QueueMutex.Unlock()
 	if len(IntervieweeList) == 0 {
 		InterviewerList = append(InterviewerList, uid)
-		return "평가등록완료"
+		c.MatchMap[uid] = matchedUid
 	} else {
-		// send to each other
+		matchedIntervieweeID := IntervieweeList[0]
+		myMatchInfo := MatchInfo{
+			Code: true,
+			IntervieweeID: matchedIntervieweeID,
+			InterviewerID: uid,
+			Subject: c.SubmittedSubjectMap[matchedIntervieweeID],
+		}
+		c.MatchMap[matchedIntervieweeID] <- myMatchInfo
+		matchedUid <- myMatchInfo
 		IntervieweeList = removeClient(IntervieweeList, 0)
-		return "평가등록완료"
 	}
+	return "평가등록완료"
 }
 
 // RegisterCancel 함수는 uid 를 인자로 받아 해당 유저의 평가 등록을 취소하는 함수이다.
