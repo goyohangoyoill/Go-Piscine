@@ -83,11 +83,17 @@ func (c *Client) SignUp(uid, name string) (msg string) {
 	// ret nil, err        : 에러
 	// ret, err nil        : 사용자 있음
 	// ret, err            : 에러
-	if _, qErr := tx.Query(`SELECT id FROM people WHERE name = $1 ;`, name); qErr == nil {
-		if _, qErr := tx.Query(`SELECT id FROM peole WHERE password=$1`, uid); qErr == nil {
-			if _, eErr := tx.Exec(`INSERT INTO people ( name, password ) VALUES ( ?, ? ) ;`, name, uid); eErr != nil {
-				return "가입오류: 생성 실패"
+	if ret, qErr := tx.Query(`SELECT id FROM people WHERE name = $1 ;`, name); qErr != nil {
+		if ret != nil {
+			return "가입오류: 이미 사용중인 이름"
+		}
+		if ret, qErr := tx.Query(`SELECT id FROM peole WHERE password=$1`, name); qErr != nil {
+			if ret != nil {
+				return "가입오류: 이미 가입된 사용자"
 			}
+		}
+		if _, eErr := tx.Exec(`INSERT INTO people ( name, password ) VALUES ( ?, ? ) ;`, name, uid); eErr != nil {
+			return "가입오류: 생성 실패"
 		}
 	}
 	tErr = tx.Commit()
@@ -113,7 +119,7 @@ func (c *Client) ModifyId(uid, name string) (msg string) {
 			return "인트라 ID 수정오류: 매칭되는 사용자가 없음"
 		}
 		if _, eErr := tx.Exec(`UPDATE people SET name='?' WHERE password=? ;`, name, uid); eErr != nil {
-			return "인트라 ID 수정오류: 수정 실패" + name + uid
+			return "인트라 ID 수정오류: 수정 실패"
 		}
 	}
 	tErr = tx.Commit()
