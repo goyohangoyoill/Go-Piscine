@@ -161,7 +161,7 @@ func (c *Client) MyGrade(uid string) (grades EmbedInfo) {
 			if sErr := rows.Scan(&course, &score, &pass, &stamp); sErr != nil {
 				return
 			}
-			tempLines := make([]string, 3)
+			tempLines := make([]string, 0, 3)
 			tempLines = append(tempLines, "Score: "+strconv.Itoa(score))
 			if pass {
 				tempLines = append(tempLines, "PASS")
@@ -180,7 +180,50 @@ func (c *Client) MyGrade(uid string) (grades EmbedInfo) {
 
 // MatchState 함수는 uid 를 인자로 받아 현재 큐 정보를 리턴하는 함수이다.
 func (c *Client) MatchState() (grades EmbedInfo) {
-	return
+	grades.title = "평가 및 피평가 매칭 현황"
+	people := make(map[string]string)
+	tx, tErr := record.DB.Begin()
+	if tErr != nil {
+		return
+	}
+	defer tx.Rollback()
+	if rows, qErr := tx.Query(`SELECT name, password FROM people`); qErr != nil {
+		return
+	} else {
+		var name string
+		var pass string
+		for rows.Next() {
+			if sErr := rows.Scan(&name, &pass); sErr != nil {
+				return
+			}
+			people[pass] = name
+		}
+		rows.Close()
+	}
+	tErr = tx.Commit()
+	if tErr != nil {
+		return
+	} else {
+		tempLines := make([]string, 0, 100)
+		InterviewerMutex.Lock()
+		for _, v := range InterviewerList {
+			if i, ok := people[v]; ok {
+				tempLines = append(tempLines, i)
+			}
+		}
+		InterviewerMutex.Unlock()
+		grades.embedRows = append(grades.embedRows, EmbedRow{name: "평가자", lines: tempLines})
+		tempLines = make([]string, 0, 100)
+		IntervieweeMutex.Lock()
+		for _, v := range IntervieweeList {
+			if i, ok := people[v]; ok {
+				tempLines = append(tempLines, i)
+			}
+		}
+		InterviewerMutex.Unlock()
+		grades.embedRows = append(grades.embedRows, EmbedRow{name: "피평가자", lines: tempLines})
+		return
+	}
 }
 
 // FindIntraByUID 함수는 uid 를 인자로 받아 intraID 를 반환하는 함수이다.
@@ -206,38 +249,4 @@ func (c *Client) FindIntraByUID(uid string) (intraID string) {
 	} else {
 		return
 	}
-}
-
-// EmbedRow 구조체는 name 과 lines 를 가진다.
-// name, lines 를 반환하는 게터 함수들 역시 가진다.
-type EmbedRow struct {
-	name  string
-	lines []string
-}
-
-// Name 함수는 name 을 반환하는 게터이다.
-func (si EmbedRow) Name() string {
-	return si.name
-}
-
-// Lines 함수는 lines 을 반환하는 게터이다.
-func (si EmbedRow) Lines() []string {
-	return si.lines
-}
-
-// EmbedInfo 구조체는 title 과 subjectGrades 를 가진다.
-// title, subjectGrades 를 반환하는 게터 함수들 역시 가진다.
-type EmbedInfo struct {
-	title     string
-	embedRows []EmbedRow
-}
-
-// Title 함수는 title 을 반환하는 게터이다.
-func (gi EmbedInfo) Title() string {
-	return gi.title
-}
-
-// EmbedRows 함수는 embedRows 을 반환하는 게터이다.
-func (gi EmbedInfo) EmbedRows() []EmbedRow {
-	return gi.embedRows
 }
