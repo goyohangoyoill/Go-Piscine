@@ -84,16 +84,12 @@ func (c *Client) SignUp(uid, name string) (msg string) {
 	// ret, err nil        : 사용자 있음
 	// ret, err            : 에러
 	if ret, qErr := tx.Query(`SELECT id FROM people WHERE name = $1 ;`, name); qErr != nil {
-		// 에러가 있으면
-		return "가입오류: 쿼리 실패"
-	} else {
 		if ret != nil {
 			return "가입오류: 이미 가입된 사용자"
 		}
 		if _, eErr := tx.Exec(`INSERT INTO people ( name, password ) VALUES ( ?, ? ) ;`, name, uid); eErr != nil {
 			return "가입오류: 생성 실패"
 		}
-	}
 	tErr = tx.Commit()
 	if tErr != nil {
 		return "가입오류: 트랜잭션 적용"
@@ -113,9 +109,6 @@ func (c *Client) ModifyId(uid, name string) (msg string) {
 	// ret, err nil        : 사용자 있음
 	// ret, err            : 에러
 	if ret, qErr := tx.Query(`SELECT id FROM people WHERE password = $1 ;`, uid); qErr != nil {
-		// 에러가 있으면
-		return "인트라 ID 수정오류: 쿼리 실패"
-	} else {
 		if ret != nil {
 			return "인트라 ID 수정오류: 매칭되는 사용자가 없음"
 		}
