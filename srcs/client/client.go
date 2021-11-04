@@ -83,17 +83,11 @@ func (c *Client) SignUp(uid, name string) (msg string) {
 	// ret nil, err        : 에러
 	// ret, err nil        : 사용자 있음
 	// ret, err            : 에러
-	if ret, qErr := tx.Query(`SELECT id FROM people WHERE name = $1 ;`, name); qErr != nil {
-		if ret != nil {
-			return "가입오류: 이미 사용중인 이름"
-		}
-		if ret, qErr := tx.Query(`SELECT id FROM peole WHERE password=$1`, uid); qErr != nil {
-			if ret != nil {
-				return "가입오류: 이미 가입된 사용자"
+	if _, qErr := tx.Query(`SELECT id FROM people WHERE name = $1 ;`, name); qErr == nil {
+		if _, qErr := tx.Query(`SELECT id FROM peole WHERE password=$1`, uid); qErr == nil {
+			if _, eErr := tx.Exec(`INSERT INTO people ( name, password ) VALUES ( ?, ? ) ;`, name, uid); eErr != nil {
+				return "가입오류: 생성 실패"
 			}
-		}
-		if _, eErr := tx.Exec(`INSERT INTO people ( name, password ) VALUES ( ?, ? ) ;`, name, uid); eErr != nil {
-			return "가입오류: 생성 실패"
 		}
 	}
 	tErr = tx.Commit()
