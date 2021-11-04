@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// SubejctInfo 구조체는 서브젝트 관련 정보들을 담고 있는 구조체이다.
+// SubjectInfo 구조체는 서브젝트 관련 정보들을 담고 있는 구조체이다.
 type SubjectInfo struct {
 	// SubjectName 는 Subject 의 이름이다.
 	// SubjectURL 는 해당 서브젝트의 공식 문서 url 이다.
