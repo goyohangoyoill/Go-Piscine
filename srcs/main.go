@@ -29,13 +29,6 @@ func init() {
 	MIDs = make(map[string]string)
 	IntraIDs = make(map[string]string)
 	c = client.NewClient()
-	viper.SetConfigName("config")
-	viper.SetConfigType("json")
-	viper.AddConfigPath("./secret")
-	viper.AddConfigPath("../secret")
-	if err := viper.ReadInConfig(); err != nil {
-		fmt.Println("Viper Loading Failed")
-	}
 }
 
 func main() {
