@@ -125,7 +125,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		sendEmbedPretty(s, m.ChannelID, grade)
 		return
 	}
-	if m.Content == "!GOPISCINEREGISTERMODE" && m.Author.ID == "318743234601811969" {
+	if m.Content == "!GOPISCINEREGISTERMODE" && (m.Author.ID == "318743234601811969" || m.Author.ID == "905699384581312542") {
 		mode = !mode
 	}
 	if mode && strings.HasPrefix(m.Content, "!인트라등록") {
