@@ -21,7 +21,9 @@ FROM		alpine
 #                                                       Copy Files on publish
 ###############################################################################
 WORKDIR		/run
-COPY		--from=builder /build/srcs/piscine-golang-interact ./pisicne-golang-interact
+RUN			mkdir secret
+COPY		--from=builder /build/srcs/piscine-golang-interact ./piscine-golang-interact
+COPY		--from=builder /build/srcs/secret/config.json ./secret/config.json
 
 ###############################################################################
 #                                                       Open Ports on publish
@@ -31,4 +33,4 @@ EXPOSE		80		443
 ###############################################################################
 #                                                       Starting on publish
 ###############################################################################
-ENTRYPOINT	["/bin/sh"]
+ENTRYPOINT	["./piscine-golang-interact"]

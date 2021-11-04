@@ -104,6 +104,7 @@ func (c *Client) SignUp(uid, name string) (msg string) {
 // Eval Queue 에 사용자가 있는지 Mutex 를 걸고 확인한 후에 있다면 매칭을 진행해야한다. ** MUTEX 활용 필수!!
 func (c *Client) Submit(sid, uid, url string, matchedUserId chan MatchInfo) (msg string) {
 	// convertID := SubjectStrMap[sid]
+	// 평가 포인트 및 매치 기록
 	InterviewerMutex.Lock()
 	defer InterviewerMutex.Lock()
 	if len(InterviewerList) == 0 {
@@ -121,6 +122,7 @@ func (c *Client) Submit(sid, uid, url string, matchedUserId chan MatchInfo) (msg
 // SubmitCancel 함수는 uid 를 인자로 받아 해당 유저의 제출을 취소하는 함수이다.
 // 제출 취소의 성공/실패 여부를 msg 로 리턴한다.
 func (c *Client) SubmitCancel(uid string) (msg string) {
+	// 디비 기록 확인
 	IntervieweeMutex.Lock()
 	defer IntervieweeMutex.Unlock()
 	for i, v := range IntervieweeList {
@@ -136,6 +138,7 @@ func (c *Client) SubmitCancel(uid string) (msg string) {
 // 평가 등록을 수행하고 작업이 성공적으로 이루어졌는지 여부를 알리는 msg 를 반환하는 함수이다.
 // Submit Queue 에 사용자가 있는지 Mutex 를 걸고 확인한 후에 있다면 매칭을 진행해야한다. ** MUTEX 활용 필수!!
 func (c *Client) Register(uid string, matchedUid chan MatchInfo) (msg string) {
+	// 평가 포인트 및 매치 기록
 	IntervieweeMutex.Lock()
 	defer IntervieweeMutex.Unlock()
 	if len(IntervieweeList) == 0 {
@@ -153,6 +156,7 @@ func (c *Client) Register(uid string, matchedUid chan MatchInfo) (msg string) {
 // RegisterCancel 함수는 uid 를 인자로 받아 해당 유저의 평가 등록을 취소하는 함수이다.
 // 평가 등록 취소의 성공/실패 여부를 msg 로 리턴한다.
 func (c *Client) RegisterCancel(uid string) (msg string) {
+	// 디비 기록 확인
 	InterviewerMutex.Lock()
 	defer InterviewerMutex.Unlock()
 	for i, v := range InterviewerList {
