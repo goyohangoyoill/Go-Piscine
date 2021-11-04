@@ -74,6 +74,7 @@ func messageReactionAdd(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
 		}
 		return
 	}
+	mid = mMIDs[r.UserID]
 	if mid == r.MessageID {
 		switch r.Emoji.Name {
 		case "⭕":
