@@ -3,7 +3,6 @@ package record
 import (
 	"database/sql"
 	"fmt"
-	"os"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/spf13/viper"
@@ -20,7 +19,7 @@ func preparation() (info [5]string) {
 		fmt.Println("Viper Loading Failed")
 	}
 	info[0] = (viper.Get("DB_KIND")).(string)
-	info[1] = os.Getenv((viper.Get("DB_HOST")).(string))
+	info[1] = (viper.Get("DB_HOST")).(string)
 	info[2] = (viper.Get("DB_NAME")).(string)
 	info[3] = (viper.Get("DB_USER")).(string)
 	info[4] = (viper.Get("DB_PASS")).(string)
