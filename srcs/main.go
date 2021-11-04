@@ -118,8 +118,15 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		sendEmbedPretty(s, m.ChannelID, grade)
 		return
 	}
-	if m.Content == "!GOPISCINEREGISTERMODE" && (m.Author.ID == "318743234601811969" || m.Author.ID == "905699384581312542") {
+	if m.Content == "!GOPISCINEREGISTERMODE" && (m.Author.ID == "318743234601811969" ||
+		m.Author.ID == "905699384581312542" || m.Author.ID == "382356905990815744" ||
+		m.Author.ID == "383847223504666626") {
 		mode = !mode
+		if mode {
+			s.ChannelMessageSend(m.ChannelID, "사용자 등록모드 시작")
+		} else {
+			s.ChannelMessageSend(m.ChannelID, "사용자 등록모드 종료")
+		}
 	}
 	if mode && strings.HasPrefix(m.Content, "!인트라등록") {
 		command := strings.Split(m.Content, " ")
