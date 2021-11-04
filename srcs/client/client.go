@@ -52,7 +52,7 @@ type MatchInfo struct {
 type Client struct {
 	// MatchMap 은 uid 를 key 로 하여,
 	// 해당 유저가 매칭 성공시에 상대의 uid 를 받기 위한 채널을 value 로 한다.
-	MatchMap map[string]chan MatchInfo
+	MatchMap            map[string]chan MatchInfo
 	SubmittedSubjectMap map[string]SubjectInfo
 }
 
@@ -110,7 +110,7 @@ func (c *Client) ModifyId(uid, name string) (msg string) {
 		if ret != nil {
 			return "인트라 ID 수정오류: 매칭되는 사용자가 없음"
 		}
-		if _, eErr := tx.Exec(`UPDATE people SET name='?' WHERE password=? ;`, name, uid); eErr != nil {
+		if _, eErr := tx.Exec(`UPDATE people SET name=? WHERE password=? ;`, name, uid); eErr != nil {
 			return "인트라 ID 수정오류: 수정 실패"
 		}
 	}
@@ -137,10 +137,10 @@ func (c *Client) Submit(sName, uid, url string, matchedUserId chan MatchInfo) (m
 	} else {
 		matchedInterviewerID := InterviewerList[0]
 		myMatchInfo := MatchInfo{
-			Code: true,
+			Code:          true,
 			IntervieweeID: uid,
 			InterviewerID: matchedInterviewerID,
-			Subject: SubjectInfoMap[sName],
+			Subject:       SubjectInfoMap[sName],
 		}
 		c.MatchMap[matchedInterviewerID] <- myMatchInfo
 		matchedUserId <- myMatchInfo
@@ -175,10 +175,10 @@ func (c *Client) Register(uid string, matchedUid chan MatchInfo) (msg string) {
 	} else {
 		matchedIntervieweeID := IntervieweeList[0]
 		myMatchInfo := MatchInfo{
-			Code: true,
+			Code:          true,
 			IntervieweeID: matchedIntervieweeID,
 			InterviewerID: uid,
-			Subject: c.SubmittedSubjectMap[matchedIntervieweeID],
+			Subject:       c.SubmittedSubjectMap[matchedIntervieweeID],
 		}
 		c.MatchMap[matchedIntervieweeID] <- myMatchInfo
 		matchedUid <- myMatchInfo
