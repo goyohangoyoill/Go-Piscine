@@ -10,7 +10,8 @@ WORKDIR		/build
 COPY		../srcs srcs/
 
 WORKDIR		/build/srcs
-RUN			go mod tidy && go build -o piscine-golang-interact
+RUN			go mod tidy
+RUN			go build -o piscine-golang-interact
 
 ###############################################################################
 #                                                       Image Info on publish
