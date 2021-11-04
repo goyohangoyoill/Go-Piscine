@@ -1,9 +1,44 @@
 package client
 
 import (
-	"piscine-golang-interact/record"
+	"fmt"
+	"strconv"
+	"sync"
 	"time"
+
+	"piscine-golang-interact/record"
 )
+
+// SubjectNumMap 은 sid에 따른 Subject 이름을 찾는 map 이다.
+var SubjectNumMap map[int]string
+
+// SubjectStrMap 은 Subject 이름에 따른 sid를 찾는 map 이다.
+var SubjectStrMap map[string]int
+
+// IntervieweeList 는 피평가자의 uid 를 이용하는 Queue 이다.
+var IntervieweeList []string
+
+// InterviewerList 는 평가자의 uid 를 이용하는 Queue 이다.
+var InterviewerList []string
+
+// IntervieweeMutex 는 피평가자 Queue를 조작하는 Mutex 이다.
+var IntervieweeMutex sync.Mutex
+
+// InterviewerMutex 는 평가자 Queue를 조작하는 Mutex 이다.
+var InterviewerMutex sync.Mutex
+
+func init() {
+	SubjectNumMap = map[int]string{0: "Day00", 1: "Day01", 2: "Day02", 3: "Day03", 4: "Day04", 5: "Day05", 100: "Rush00"}
+	SubjectStrMap = map[string]int{"Day00": 0, "Day01": 1, "Day02": 2, "Day03": 3, "Day04": 4, "Day05": 5, "Rush00": 100}
+	IntervieweeList = make([]string, 0, 100)
+	InterviewerList = make([]string, 0, 100)
+	IntervieweeMutex = sync.Mutex{}
+	InterviewerMutex = sync.Mutex{}
+}
+
+func removeClient(list []string, i int) []string {
+	return append(list[:i], list[i+1:]...)
+}
 
 // SubjectInfo 구조체는 서브젝트 관련 정보들을 담고 있는 구조체이다.
 type SubjectInfo struct {
@@ -68,13 +103,22 @@ func (c *Client) SignUp(uid, name string) (msg string) {
 // 서브젝트 제출을 수행하고 작업이 성공적으로 이루어졌는지 여부를 알리는 msg 를 반환하는 함수이다.
 // Eval Queue 에 사용자가 있는지 Mutex 를 걸고 확인한 후에 있다면 매칭을 진행해야한다. ** MUTEX 활용 필수!!
 func (c *Client) Submit(sid, uid, url string, matchedUserId chan MatchInfo) (msg string) {
+	// convertID := SubjectStrMap[sid]
 	return "제출완료"
 }
 
 // SubmitCancel 함수는 uid 를 인자로 받아 해당 유저의 제출을 취소하는 함수이다.
 // 제출 취소의 성공/실패 여부를 msg 로 리턴한다.
 func (c *Client) SubmitCancel(uid string) (msg string) {
-	return "취소완료"
+	IntervieweeMutex.Lock()
+	defer IntervieweeMutex.Unlock()
+	for i, v := range IntervieweeList {
+		if v == uid {
+			removeClient(IntervieweeList, i)
+			return "취소완료"
+		}
+	}
+	return "취소오류"
 }
 
 // Register 함수는 uid 와 매칭된 상대방의 UID 를 공유할 matchedUserId channel 을 인자로 받아
@@ -86,8 +130,16 @@ func (c *Client) Register(uid string, matchedUid chan MatchInfo) (msg string) {
 
 // RegisterCancel 함수는 uid 를 인자로 받아 해당 유저의 평가 등록을 취소하는 함수이다.
 // 평가 등록 취소의 성공/실패 여부를 msg 로 리턴한다.
-func (c *Client) RegisterCancel(sid, uid string) (msg string) {
-	return "평가취소완료"
+func (c *Client) RegisterCancel(uid string) (msg string) {
+	InterviewerMutex.Lock()
+	defer InterviewerMutex.Unlock()
+	for i, v := range InterviewerList {
+		if v == uid {
+			removeClient(InterviewerList, i)
+			return "평가취소완료"
+		}
+	}
+	return "평가취소오류"
 }
 
 // MyGrade 함수는 uid 를 인자로 받아 해당 유저의 점수 정보를 리턴하는 함수이다.
@@ -109,6 +161,16 @@ func (c *Client) MyGrade(uid string) (grades EmbedInfo) {
 			if sErr := rows.Scan(&course, &score, &pass, &stamp); sErr != nil {
 				return
 			}
+			tempLines := make([]string, 3)
+			tempLines = append(tempLines, "Score: "+strconv.Itoa(score))
+			if pass {
+				tempLines = append(tempLines, "PASS")
+			} else {
+				tempLines = append(tempLines, "FAIL")
+			}
+			time := fmt.Sprintf("%d-%02d-%02d %02d:%02d:%02d\n", stamp.Year(), stamp.Month(), stamp.Day(), stamp.Hour(), stamp.Minute(), stamp.Second())
+			tempLines = append(tempLines, "Time: "+time)
+			grades.embedRows = append(grades.embedRows, EmbedRow{name: SubjectNumMap[course], lines: tempLines})
 		}
 		rows.Close()
 	}
@@ -131,13 +193,11 @@ func (c *Client) FindIntraByUID(uid string) (intraID string) {
 	if rows, qErr := tx.Query(`SELECT name FROM people WHERE password = $1 ;`, uid); qErr != nil {
 		return "가입되지 않은 사용자"
 	} else {
-		/*
-			for rows.Next() {
-				if sErr := rows.Scan(&intraID); sErr != nil {
-					return "잘못된 참조"
-				}
+		for rows.Next() {
+			if sErr := rows.Scan(&intraID); sErr != nil {
+				return "잘못된 참조"
 			}
-		*/
+		}
 		rows.Close()
 	}
 	tErr = tx.Commit()
