@@ -208,12 +208,12 @@ func registerEvalTask(s *discordgo.Session, m *discordgo.MessageCreate) {
 		)
 		matchSuccessEmbed.AddField(
 			"평가할 서브젝트:",
-			evalInfo.SubjectName+"\n"+
-				evalInfo.SubjectURL,
+			evalInfo.Subject.SubjectName+"\n"+
+				evalInfo.Subject.SubjectURL,
 		)
 		matchSuccessEmbed.AddField(
 			"평가표 링크:",
-			evalInfo.EvalGuideURL,
+			evalInfo.Subject.EvalGuideURL,
 		)
 		s.ChannelMessageSendEmbed(dmChan.ID, matchSuccessEmbed.MessageEmbed)
 	}
@@ -267,8 +267,8 @@ func submissionTask(s *discordgo.Session, m *discordgo.MessageCreate) {
 		)
 		matchSuccessEmbed.AddField(
 			"평가할 서브젝트:",
-			evalInfo.SubjectName+"\n"+
-				evalInfo.SubjectURL,
+			evalInfo.Subject.SubjectName+"\n"+
+				evalInfo.Subject.SubjectURL,
 		)
 		s.ChannelMessageSendEmbed(dmChan.ID, matchSuccessEmbed.MessageEmbed)
 	}
