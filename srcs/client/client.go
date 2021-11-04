@@ -90,6 +90,7 @@ func (c *Client) SignUp(uid, name string) (msg string) {
 		if _, eErr := tx.Exec(`INSERT INTO people ( name, password ) VALUES ( ?, ? ) ;`, name, uid); eErr != nil {
 			return "가입오류: 생성 실패"
 		}
+	}
 	tErr = tx.Commit()
 	if tErr != nil {
 		return "가입오류: 트랜잭션 적용"
