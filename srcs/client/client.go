@@ -104,24 +104,24 @@ func (c *Client) SignUp(uid, name string) (msg string) {
 func (c *Client) ModifyId(uid, name string) (msg string) {
 	tx, tErr := record.DB.Begin()
 	if tErr != nil {
-		return "가입오류: 트랜잭션 초기화"
+		return "인트라 ID 수정오류: 트랜잭션 초기화"
 	}
 	defer tx.Rollback()
 	if ret, qErr := tx.Query(`SELECT id FROM people WHERE name = $1 ;`, name); ret != nil {
 		if qErr == nil {
-			return "가입오류: 쿼리 실패"
+			return "인트라 ID 수정오류: 쿼리 실패"
 		}
-		if _, eErr := tx.Exec(`INSERT INTO people ( name, password ) VALUES ( ?, ? ) ;`, name, uid); eErr != nil {
-			return "가입오류: 생성 실패"
+		if _, eErr := tx.Exec(`update people set name=? where password=? ;`, name, uid); eErr != nil {
+			return "인트라 ID 수정오류: 수정 실패"
 		}
 	} else {
-		return "가입오류: 기존 사용자"
+		return "인트라 ID 수정오류: 매칭되는 사용자가 없음"
 	}
 	tErr = tx.Commit()
 	if tErr != nil {
-		return "가입오류: 트랜잭션 적용"
+		return "인트라 ID 수정오류: 트랜잭션 적용"
 	} else {
-		return "가입 완료"
+		return "인트라 ID 수정 완료"
 	}
 }
 
