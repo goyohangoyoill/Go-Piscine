@@ -21,19 +21,15 @@ var IntervieweeList []string
 // InterviewerList 는 평가자의 uid 를 이용하는 Queue 이다.
 var InterviewerList []string
 
-// IntervieweeMutex 는 피평가자 Queue를 조작하는 Mutex 이다.
-var IntervieweeMutex sync.Mutex
-
-// InterviewerMutex 는 평가자 Queue를 조작하는 Mutex 이다.
-var InterviewerMutex sync.Mutex
+// QueueMutex 는 대기열의 동기화를 위한 Mutex 이다.
+var QueueMutex sync.Mutex
 
 func init() {
 	SubjectNumMap = map[int]string{0: "Day00", 1: "Day01", 2: "Day02", 3: "Day03", 4: "Day04", 5: "Day05", 100: "Rush00"}
 	SubjectStrMap = map[string]int{"Day00": 0, "Day01": 1, "Day02": 2, "Day03": 3, "Day04": 4, "Day05": 5, "Rush00": 100}
 	IntervieweeList = make([]string, 0, 100)
 	InterviewerList = make([]string, 0, 100)
-	IntervieweeMutex = sync.Mutex{}
-	InterviewerMutex = sync.Mutex{}
+	QueueMutex = sync.Mutex{}
 }
 
 func removeClient(list []string, i int) []string {
@@ -131,13 +127,10 @@ func (c *Client) ModifyId(uid, name string) (msg string) {
 // Eval Queue 에 사용자가 있는지 Mutex 를 걸고 확인한 후에 있다면 매칭을 진행해야한다. ** MUTEX 활용 필수!!
 func (c *Client) Submit(sid, uid, url string, matchedUserId chan MatchInfo) (msg string) {
 	// convertID := SubjectStrMap[sid]
-	// 평가 포인트 및 매치 기록
-	InterviewerMutex.Lock()
-	defer InterviewerMutex.Lock()
+	QueueMutex.Lock()
+	defer QueueMutex.Unlock()
 	if len(InterviewerList) == 0 {
-		IntervieweeMutex.Lock()
 		IntervieweeList = append(IntervieweeList, uid)
-		IntervieweeMutex.Unlock()
 		return "제출완료"
 	} else {
 		// send to each other
@@ -149,9 +142,8 @@ func (c *Client) Submit(sid, uid, url string, matchedUserId chan MatchInfo) (msg
 // SubmitCancel 함수는 uid 를 인자로 받아 해당 유저의 제출을 취소하는 함수이다.
 // 제출 취소의 성공/실패 여부를 msg 로 리턴한다.
 func (c *Client) SubmitCancel(uid string) (msg string) {
-	// 디비 기록 확인
-	IntervieweeMutex.Lock()
-	defer IntervieweeMutex.Unlock()
+	QueueMutex.Lock()
+	defer QueueMutex.Unlock()
 	for i, v := range IntervieweeList {
 		if v == uid {
 			removeClient(IntervieweeList, i)
@@ -165,13 +157,10 @@ func (c *Client) SubmitCancel(uid string) (msg string) {
 // 평가 등록을 수행하고 작업이 성공적으로 이루어졌는지 여부를 알리는 msg 를 반환하는 함수이다.
 // Submit Queue 에 사용자가 있는지 Mutex 를 걸고 확인한 후에 있다면 매칭을 진행해야한다. ** MUTEX 활용 필수!!
 func (c *Client) Register(uid string, matchedUid chan MatchInfo) (msg string) {
-	// 평가 포인트 및 매치 기록
-	IntervieweeMutex.Lock()
-	defer IntervieweeMutex.Unlock()
+	QueueMutex.Lock()
+	defer QueueMutex.Unlock()
 	if len(IntervieweeList) == 0 {
-		InterviewerMutex.Lock()
 		InterviewerList = append(InterviewerList, uid)
-		InterviewerMutex.Unlock()
 		return "평가등록완료"
 	} else {
 		// send to each other
@@ -183,9 +172,8 @@ func (c *Client) Register(uid string, matchedUid chan MatchInfo) (msg string) {
 // RegisterCancel 함수는 uid 를 인자로 받아 해당 유저의 평가 등록을 취소하는 함수이다.
 // 평가 등록 취소의 성공/실패 여부를 msg 로 리턴한다.
 func (c *Client) RegisterCancel(uid string) (msg string) {
-	// 디비 기록 확인
-	InterviewerMutex.Lock()
-	defer InterviewerMutex.Unlock()
+	QueueMutex.Lock()
+	defer QueueMutex.Unlock()
 	for i, v := range InterviewerList {
 		if v == uid {
 			removeClient(InterviewerList, i)
@@ -231,16 +219,16 @@ func (c *Client) MyGrade(uid string) (grades EmbedInfo) {
 	return
 }
 
-func matchEmbedRow(m *sync.Mutex, s string, p *map[string]string, l *[]string) EmbedRow {
+func matchEmbedRow(s string, p *map[string]string, l *[]string) EmbedRow {
 	tempEmbedRow := EmbedRow{name: s}
 	tempLines := make([]string, 0, 100)
-	m.Lock()
+	QueueMutex.Lock()
 	for _, v := range *l {
 		if i, ok := (*p)[v]; ok {
 			tempLines = append(tempLines, i)
 		}
 	}
-	m.Unlock()
+	QueueMutex.Unlock()
 	if len(tempLines) == 0 {
 		tempLines = append(tempLines, "대기열 없음")
 	}
@@ -274,8 +262,8 @@ func (c *Client) MatchState() (grades EmbedInfo) {
 	if tErr != nil {
 		return
 	} else {
-		grades.embedRows = append(grades.embedRows, matchEmbedRow(&InterviewerMutex, "평가자", &people, &InterviewerList))
-		grades.embedRows = append(grades.embedRows, matchEmbedRow(&IntervieweeMutex, "피평가자", &people, &IntervieweeList))
+		grades.embedRows = append(grades.embedRows, matchEmbedRow("평가자", &people, &InterviewerList))
+		grades.embedRows = append(grades.embedRows, matchEmbedRow("피평가자", &people, &IntervieweeList))
 		return
 	}
 }
