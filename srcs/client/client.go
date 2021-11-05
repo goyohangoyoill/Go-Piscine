@@ -164,7 +164,6 @@ func (c *Client) Submit(sName, uid, url string, matchedUserId chan MatchInfo) (m
 		go func() {
 			matchedUserId <- myMatchInfo
 		}()
-		delete(c.MatchMap, matchedInterviewerID)
 		InterviewerList = removeClient(InterviewerList, 0)
 	}
 	return "제출완료"
@@ -214,7 +213,6 @@ func (c *Client) Register(uid string, matchedUid chan MatchInfo) (msg string) {
 		go func() {
 			matchedUid <- myMatchInfo
 		}()
-		delete(c.MatchMap, matchedIntervieweeID)
 		IntervieweeList = removeClient(IntervieweeList, 0)
 	}
 	return "평가등록완료"
