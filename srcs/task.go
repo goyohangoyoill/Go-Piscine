@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/bwmarrin/discordgo"
 	embed "github.com/clinet/discordgo-embed"
 	"piscine-golang-interact/client"
@@ -12,9 +13,10 @@ func registerEvalResponse(s *discordgo.Session, r *discordgo.MessageReactionAdd)
 	msg := c.Register(r.UserID, matchedUserID)
 	s.ChannelMessageSend(r.ChannelID, msg)
 	evalInfo := <-matchedUserID
+	fmt.Println("eval match complete (register wait case)")
 	switch evalInfo.Code {
 	case false:
-		// pass
+		fmt.Println("register canceled")
 	case true:
 		dmChan, _ := s.UserChannelCreate(r.UserID)
 		matchSuccessEmbed := embed.NewEmbed()
@@ -61,13 +63,14 @@ func RegisterCancelTask(s *discordgo.Session, m *discordgo.MessageCreate) {
 func submissionResponse(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
 	gitUrl := submitURLs[r.UserID]
 	subjectID := submitSIDs[r.UserID]
-	matchedUserID := make(chan client.MatchInfo, 2)
+	matchedUserID := make(chan client.MatchInfo)
 	msg := c.Submit(subjectID, r.UserID, gitUrl, matchedUserID)
 	s.ChannelMessageSend(r.ChannelID, msg)
 	evalInfo := <-matchedUserID
+	fmt.Println("eval match complete (submit wait case)")
 	switch evalInfo.Code {
 	case false:
-		// pass
+		fmt.Println("submission canceled")
 	case true:
 		dmChan, _ := s.UserChannelCreate(r.UserID)
 		matchSuccessEmbed := embed.NewEmbed()

@@ -156,7 +156,9 @@ func (c *Client) Submit(sName, uid, url string, matchedUserId chan MatchInfo) (m
 			InterviewerID: matchedInterviewerID,
 			Subject:       SubjectInfoMap[sName],
 		}
-		c.MatchMap[matchedInterviewerID] <- myMatchInfo
+		go func() {
+			c.MatchMap[matchedInterviewerID] <- myMatchInfo
+		}()
 		matchedUserId <- myMatchInfo
 		InterviewerList = removeClient(InterviewerList, 0)
 	}
@@ -199,7 +201,9 @@ func (c *Client) Register(uid string, matchedUid chan MatchInfo) (msg string) {
 			InterviewerID: uid,
 			Subject:       c.SubmittedSubjectMap[matchedIntervieweeID],
 		}
-		c.MatchMap[matchedIntervieweeID] <- myMatchInfo
+		go func() {
+			c.MatchMap[matchedIntervieweeID] <- myMatchInfo
+		}()
 		matchedUid <- myMatchInfo
 		IntervieweeList = removeClient(IntervieweeList, 0)
 	}
