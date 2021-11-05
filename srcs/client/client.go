@@ -75,16 +75,22 @@ func (c *Client) SignUp(uid, name string) (msg string) {
 	// ret nil, err        : 에러
 	// ret, err nil        : 사용자 있음
 	// ret, err            : 에러
-	if ret, qErr := tx.Query(`SELECT id FROM people WHERE name = $1 ;`, name); qErr != nil {
+	if ret, qErr := tx.Query(
+		`SELECT id FROM people WHERE name = $1 ;`,
+		name); qErr != nil {
 		if ret != nil {
 			return "가입오류: 이미 사용중인 이름"
 		}
-		if ret, qErr := tx.Query(`SELECT id FROM peole WHERE password=$1`, name); qErr != nil {
+		if ret, qErr := tx.Query(
+			`SELECT id FROM peole WHERE password=$1`, name);
+		qErr != nil {
 			if ret != nil {
 				return "가입오류: 이미 가입된 사용자"
 			}
 		}
-		if _, eErr := tx.Exec(`INSERT INTO people ( name, password ) VALUES ( ?, ? ) ;`, name, uid); eErr != nil {
+		if _, eErr := tx.Exec(
+			`INSERT INTO people ( name, password ) VALUES ( ?, ? ) ;`,
+			name, uid); eErr != nil {
 			return "가입오류: 생성 실패"
 		}
 	}
@@ -106,11 +112,15 @@ func (c *Client) ModifyId(uid, name string) (msg string) {
 	// ret nil, err        : 에러
 	// ret, err nil        : 사용자 있음
 	// ret, err            : 에러
-	if ret, qErr := tx.Query(`SELECT id FROM people WHERE password = $1 ;`, uid); qErr != nil {
+	if ret, qErr := tx.Query(
+		`SELECT id FROM people WHERE password = $1 ;`,
+		uid); qErr != nil {
 		if ret != nil {
 			return "인트라 ID 수정오류: 매칭되는 사용자가 없음"
 		}
-		if _, eErr := tx.Exec(`UPDATE people SET name = ? WHERE password = ? ;`, name, uid); eErr != nil {
+		if _, eErr := tx.Exec(
+			`UPDATE people SET name = ? WHERE password = ? ;`,
+			name, uid); eErr != nil {
 			return "인트라 ID 수정오류: 수정 실패" + name + uid
 		}
 	}
@@ -128,6 +138,9 @@ func (c *Client) ModifyId(uid, name string) (msg string) {
 // Eval Queue 에 사용자가 있는지 Mutex 를 걸고 확인한 후에 있다면 매칭을 진행해야한다. ** MUTEX 활용 필수!!
 func (c *Client) Submit(sName, uid, url string, matchedUserId chan MatchInfo) (msg string) {
 	// convertID := SubjectStrMap[sid]
+	if c.MatchMap[uid] != nil {
+		return "이미 큐에 등록된 사용자입니다."
+	}
 	QueueMutex.Lock()
 	defer QueueMutex.Unlock()
 	if len(InterviewerList) == 0 {
@@ -156,6 +169,8 @@ func (c *Client) SubmitCancel(uid string) (msg string) {
 	defer QueueMutex.Unlock()
 	for i, v := range IntervieweeList {
 		if v == uid {
+			c.MatchMap[uid] = nil
+			c.SubmittedSubjectMap[uid] = SubjectInfo{}
 			removeClient(IntervieweeList, i)
 			return "취소완료"
 		}
@@ -167,6 +182,9 @@ func (c *Client) SubmitCancel(uid string) (msg string) {
 // 평가 등록을 수행하고 작업이 성공적으로 이루어졌는지 여부를 알리는 msg 를 반환하는 함수이다.
 // Submit Queue 에 사용자가 있는지 Mutex 를 걸고 확인한 후에 있다면 매칭을 진행해야한다. ** MUTEX 활용 필수!!
 func (c *Client) Register(uid string, matchedUid chan MatchInfo) (msg string) {
+	if c.MatchMap[uid] != nil {
+		return "이미 큐에 등록된 사용자입니다."
+	}
 	QueueMutex.Lock()
 	defer QueueMutex.Unlock()
 	if len(IntervieweeList) == 0 {
@@ -194,6 +212,7 @@ func (c *Client) RegisterCancel(uid string) (msg string) {
 	defer QueueMutex.Unlock()
 	for i, v := range InterviewerList {
 		if v == uid {
+			c.MatchMap[uid] = nil
 			removeClient(InterviewerList, i)
 			return "평가취소완료"
 		}
@@ -209,7 +228,9 @@ func (c *Client) MyGrade(uid string) (grades EmbedInfo) {
 		return
 	}
 	defer tx.Rollback()
-	if rows, qErr := tx.Query(`SELECT e.course, e.score, e.pass, e.updated_at FROM evaluation AS e JOIN people AS p ON e.interviewee_id = p.id WHERE p.password = $1 ;`, uid); qErr != nil {
+	if rows, qErr := tx.Query(
+		`SELECT e.course, e.score, e.pass, e.updated_at FROM evaluation AS e JOIN people AS p ON e.interviewee_id = p.id WHERE p.password = $1 ;`,
+		uid); qErr != nil {
 		return
 	} else {
 		var course int
@@ -227,9 +248,13 @@ func (c *Client) MyGrade(uid string) (grades EmbedInfo) {
 			} else {
 				tempLines = append(tempLines, "FAIL")
 			}
-			time := fmt.Sprintf("%d-%02d-%02d %02d:%02d:%02d\n", stamp.Year(), stamp.Month(), stamp.Day(), stamp.Hour(), stamp.Minute(), stamp.Second())
+			time := fmt.Sprintf("%d-%02d-%02d %02d:%02d:%02d\n",
+				stamp.Year(), stamp.Month(), stamp.Day(),
+				stamp.Hour(), stamp.Minute(), stamp.Second())
 			tempLines = append(tempLines, "Time: "+time)
-			grades.embedRows = append(grades.embedRows, EmbedRow{name: SubjectNumMap[course], lines: tempLines})
+			grades.embedRows = append(
+				grades.embedRows,
+				EmbedRow{name: SubjectNumMap[course], lines: tempLines})
 		}
 		rows.Close()
 	}

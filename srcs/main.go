@@ -23,16 +23,32 @@ const (
 )
 
 var (
-	c        *client.Client
-	rMIDs    map[string]string
-	mMIDs    map[string]string
-	IntraIDs map[string]string
-	mode     = false
+	c          *client.Client
+	registerMIDs map[string]string
+	registerCancelMIDs map[string]string
+
+	submitMIDs map[string]string
+	submitCancelMIDs map[string]string
+	submitURLs map[string]string
+	submitSIDs map[string]string
+
+	signupMIDs   map[string]string
+	modifyMIDs   map[string]string
+	IntraIDs     map[string]string
+	mode       = false
 )
 
 func init() {
-	rMIDs = make(map[string]string)
-	mMIDs = make(map[string]string)
+	registerMIDs = make(map[string]string)
+	registerCancelMIDs = make(map[string]string)
+
+	submitMIDs = make(map[string]string)
+	submitCancelMIDs = make(map[string]string)
+	submitURLs = make(map[string]string)
+	submitSIDs = make(map[string]string)
+
+	signupMIDs = make(map[string]string)
+	modifyMIDs = make(map[string]string)
 	IntraIDs = make(map[string]string)
 	c = client.NewClient()
 }
@@ -62,11 +78,48 @@ func main() {
 }
 
 func messageReactionAdd(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
-	if rMIDs[r.UserID] == "" && mMIDs[r.UserID] == "" {
+	if signupMIDs[r.UserID] == "" && modifyMIDs[r.UserID] == "" {
 		return
 	}
-	mid := rMIDs[r.UserID]
-	if mid == r.MessageID {
+	switch r.MessageID {
+	case registerMIDs[r.UserID]:
+		// TODO: 평가자 등록 프로세스 수행
+		switch r.Emoji.Name {
+		case "⭕":
+			s.ChannelMessageDelete(r.ChannelID, r.MessageID)
+		case "❌":
+			s.ChannelMessageDelete(r.ChannelID, r.MessageID)
+			s.ChannelMessageSend(r.ChannelID, "평가자 등록을 취소하셨습니다.")
+		}
+		return
+	case registerCancelMIDs[r.UserID]:
+		// TODO: 평가자 등록취소 프로세스 수행
+		switch r.Emoji.Name {
+		case "⭕":
+			s.ChannelMessageDelete(r.ChannelID, r.MessageID)
+		case "❌":
+			s.ChannelMessageDelete(r.ChannelID, r.MessageID)
+			s.ChannelMessageSend(r.ChannelID, "평가자 등록을 취소하지 않았습니다..")
+		}
+	case submitMIDs[r.UserID]:
+		// TODO: 제출 프로세스 수행
+		switch r.Emoji.Name {
+		case "⭕":
+			s.ChannelMessageDelete(r.ChannelID, r.MessageID)
+		case "❌":
+			s.ChannelMessageDelete(r.ChannelID, r.MessageID)
+			s.ChannelMessageSend(r.ChannelID, "제출을 취소하셨습니다.")
+		}
+	case submitCancelMIDs[r.UserID]:
+		// TODO: 제출 취소 프로세스 수행
+		switch r.Emoji.Name {
+		case "⭕":
+			s.ChannelMessageDelete(r.ChannelID, r.MessageID)
+		case "❌":
+			s.ChannelMessageDelete(r.ChannelID, r.MessageID)
+			s.ChannelMessageSend(r.ChannelID, "제출을 취소하지 않았습니다..")
+		}
+	case signupMIDs[r.UserID]:
 		switch r.Emoji.Name {
 		case "⭕":
 			s.ChannelMessageDelete(r.ChannelID, r.MessageID)
@@ -77,9 +130,7 @@ func messageReactionAdd(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
 			s.ChannelMessageSend(r.ChannelID, "등록을 취소하셨습니다.")
 		}
 		return
-	}
-	mid = mMIDs[r.UserID]
-	if mid == r.MessageID {
+	case modifyMIDs[r.UserID]:
 		switch r.Emoji.Name {
 		case "⭕":
 			s.ChannelMessageDelete(r.ChannelID, r.MessageID)
@@ -157,7 +208,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		regMsg, _ := s.ChannelMessageSend(dmChan.ID, "**주의** 등록된 정보는 등록 기간이 지나면 바꿀 수 없음!\n" +
 			"등록된 인트라 ID 를 바꾸고 싶다면 " + prefix + "인트라수정 명령어를 사용하세요\n" +
 			"당신의 인트라 ID 가 "+command[1]+" 이(가) 맞습니까?")
-		rMIDs[m.Author.ID] = regMsg.ID
+		signupMIDs[m.Author.ID] = regMsg.ID
 		IntraIDs[m.Author.ID] = command[1]
 		s.MessageReactionAdd(dmChan.ID, regMsg.ID, "⭕")
 		s.MessageReactionAdd(dmChan.ID, regMsg.ID, "❌")
@@ -171,7 +222,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		dmChan, _ := s.UserChannelCreate(m.Author.ID)
 		regMsg, _ := s.ChannelMessageSend(dmChan.ID, "**주의** 등록된 정보는 등록 기간이 지나면 바꿀 수 없음!\n" +
 			"당신의 인트라 ID 가 "+command[1]+" 이(가) 맞습니까?")
-		mMIDs[m.Author.ID] = regMsg.ID
+		modifyMIDs[m.Author.ID] = regMsg.ID
 		IntraIDs[m.Author.ID] = command[1]
 		s.MessageReactionAdd(dmChan.ID, regMsg.ID, "⭕")
 		s.MessageReactionAdd(dmChan.ID, regMsg.ID, "❌")
@@ -196,6 +247,7 @@ func sendEmbedPretty(s *discordgo.Session, cid string, info client.EmbedInfo) {
 }
 
 func registerEvalTask(s *discordgo.Session, m *discordgo.MessageCreate) {
+	// TODO: 리액션으로 확인 로직 필요
 	matchedUserID := make(chan client.MatchInfo, 2)
 	msg := c.Register(m.Author.ID, matchedUserID)
 	s.ChannelMessageSend(m.ChannelID, msg)
@@ -224,6 +276,7 @@ func registerEvalTask(s *discordgo.Session, m *discordgo.MessageCreate) {
 }
 
 func RegisterCancelTask(s *discordgo.Session, m *discordgo.MessageCreate) {
+	// TODO: 리액션으로 확인 로직 필요
 	userChannel := c.MatchMap[m.Author.ID]
 	if userChannel == nil {
 		s.ChannelMessageSend(m.ChannelID, "현재 평가 등록을 하지 않은 사용자입니다.")
@@ -234,6 +287,7 @@ func RegisterCancelTask(s *discordgo.Session, m *discordgo.MessageCreate) {
 }
 
 func submissionCancelTask(s *discordgo.Session, m *discordgo.MessageCreate) {
+	// TODO: 리액션으로 확인 로직 필요
 	userChannel := c.MatchMap[m.Author.ID]
 	if userChannel == nil {
 		s.ChannelMessageSend(m.ChannelID, "현재 제출을 하지 않은 사용자입니다.")
@@ -244,6 +298,7 @@ func submissionCancelTask(s *discordgo.Session, m *discordgo.MessageCreate) {
 }
 
 func submissionTask(s *discordgo.Session, m *discordgo.MessageCreate) {
+	// TODO: 리액션으로 확인 로직 필요
 	command := strings.Split(m.Content, " ")
 	matchedUserID := make(chan client.MatchInfo, 2)
 	if len(command) != 3 {
