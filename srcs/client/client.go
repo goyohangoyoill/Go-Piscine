@@ -24,19 +24,6 @@ var InterviewerList []string
 // QueueMutex 는 대기열의 동기화를 위한 Mutex 이다.
 var QueueMutex sync.Mutex
 
-func init() {
-	SubjectNumMap = map[int]string{0: "Day00", 1: "Day01", 2: "Day02", 3: "Day03", 4: "Day04", 5: "Day05", 100: "Rush00"}
-	SubjectInfoMap = make(map[string]SubjectInfo)
-	InitSubject(SubjectInfoMap)
-	IntervieweeList = make([]string, 0, 100)
-	InterviewerList = make([]string, 0, 100)
-	QueueMutex = sync.Mutex{}
-}
-
-func removeClient(list []string, i int) []string {
-	return append(list[:i], list[i+1:]...)
-}
-
 // MatchInfo 구조체는 평가 매칭이 성공했을 때 전달하는 평가 정보 구조체이다.
 type MatchInfo struct {
 	// Code 는 매칭 성공시 true, 매칭 취소시 false 이다.
@@ -54,6 +41,19 @@ type Client struct {
 	// 해당 유저가 매칭 성공시에 상대의 uid 를 받기 위한 채널을 value 로 한다.
 	MatchMap            map[string]chan MatchInfo
 	SubmittedSubjectMap map[string]SubjectInfo
+}
+
+func init() {
+	SubjectNumMap = map[int]string{0: "Day00", 1: "Day01", 2: "Day02", 3: "Day03", 4: "Day04", 5: "Day05", 100: "Rush00"}
+	SubjectInfoMap = make(map[string]SubjectInfo)
+	InitSubject(SubjectInfoMap)
+	IntervieweeList = make([]string, 0, 100)
+	InterviewerList = make([]string, 0, 100)
+	QueueMutex = sync.Mutex{}
+}
+
+func removeClient(list []string, i int) []string {
+	return append(list[:i], list[i+1:]...)
 }
 
 // NewClient 함수는 Client 구조체의 생성자이다.
