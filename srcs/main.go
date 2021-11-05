@@ -78,9 +78,6 @@ func main() {
 }
 
 func messageReactionAdd(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
-	if signupMIDs[r.UserID] == "" && modifyMIDs[r.UserID] == "" {
-		return
-	}
 	switch r.MessageID {
 	case registerMIDs[r.UserID]:
 		switch r.Emoji.Name {
