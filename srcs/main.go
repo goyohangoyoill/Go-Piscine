@@ -83,41 +83,23 @@ func messageReactionAdd(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
 	}
 	switch r.MessageID {
 	case registerMIDs[r.UserID]:
-		// TODO: 평가자 등록 프로세스 수행
 		switch r.Emoji.Name {
 		case "⭕":
 			s.ChannelMessageDelete(r.ChannelID, r.MessageID)
+			registerEvalResponse(s, r)
 		case "❌":
 			s.ChannelMessageDelete(r.ChannelID, r.MessageID)
 			s.ChannelMessageSend(r.ChannelID, "평가자 등록을 취소하셨습니다.")
 		}
 		return
-	case registerCancelMIDs[r.UserID]:
-		// TODO: 평가자 등록취소 프로세스 수행
-		switch r.Emoji.Name {
-		case "⭕":
-			s.ChannelMessageDelete(r.ChannelID, r.MessageID)
-		case "❌":
-			s.ChannelMessageDelete(r.ChannelID, r.MessageID)
-			s.ChannelMessageSend(r.ChannelID, "평가자 등록을 취소하지 않았습니다..")
-		}
 	case submitMIDs[r.UserID]:
-		// TODO: 제출 프로세스 수행
 		switch r.Emoji.Name {
 		case "⭕":
 			s.ChannelMessageDelete(r.ChannelID, r.MessageID)
+			submissionResponse(s, r)
 		case "❌":
 			s.ChannelMessageDelete(r.ChannelID, r.MessageID)
 			s.ChannelMessageSend(r.ChannelID, "제출을 취소하셨습니다.")
-		}
-	case submitCancelMIDs[r.UserID]:
-		// TODO: 제출 취소 프로세스 수행
-		switch r.Emoji.Name {
-		case "⭕":
-			s.ChannelMessageDelete(r.ChannelID, r.MessageID)
-		case "❌":
-			s.ChannelMessageDelete(r.ChannelID, r.MessageID)
-			s.ChannelMessageSend(r.ChannelID, "제출을 취소하지 않았습니다..")
 		}
 	case signupMIDs[r.UserID]:
 		switch r.Emoji.Name {
@@ -163,6 +145,9 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 	if strings.HasPrefix(m.Content, prefix + "제출 ") { // !제출 <github repo url> <subject name>
+		if submitMIDs[m.Author.ID] == "" {
+			return
+		}
 		submissionTask(s, m)
 		return
 	}
@@ -171,6 +156,9 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 	if m.Content == prefix + "평가등록" {
+		if registerMIDs[m.Author.ID] == "" {
+			return
+		}
 		registerEvalTask(s, m)
 		return
 	}
@@ -244,93 +232,6 @@ func sendEmbedPretty(s *discordgo.Session, cid string, info client.EmbedInfo) {
 		answer.AddField(name, value)
 	}
 	s.ChannelMessageSendEmbed(cid, answer.MessageEmbed)
-}
-
-func registerEvalTask(s *discordgo.Session, m *discordgo.MessageCreate) {
-	// TODO: 리액션으로 확인 로직 필요
-	matchedUserID := make(chan client.MatchInfo, 2)
-	msg := c.Register(m.Author.ID, matchedUserID)
-	s.ChannelMessageSend(m.ChannelID, msg)
-	switch evalInfo := <-matchedUserID; evalInfo.Code {
-	case false:
-		close(matchedUserID)
-	case true:
-		dmChan, _ := s.UserChannelCreate(m.Author.ID)
-		matchSuccessEmbed := embed.NewEmbed()
-		matchSuccessEmbed.SetTitle("평가 매칭 성공!")
-		matchSuccessEmbed.AddField(
-			"피평가자 intra ID:",
-			c.FindIntraByUID(evalInfo.IntervieweeID),
-		)
-		matchSuccessEmbed.AddField(
-			"평가할 서브젝트:",
-			evalInfo.Subject.SubjectName+"\n"+
-				evalInfo.Subject.SubjectURL,
-		)
-		matchSuccessEmbed.AddField(
-			"평가표 링크:",
-			evalInfo.Subject.EvalGuideURL,
-		)
-		s.ChannelMessageSendEmbed(dmChan.ID, matchSuccessEmbed.MessageEmbed)
-	}
-}
-
-func RegisterCancelTask(s *discordgo.Session, m *discordgo.MessageCreate) {
-	// TODO: 리액션으로 확인 로직 필요
-	userChannel := c.MatchMap[m.Author.ID]
-	if userChannel == nil {
-		s.ChannelMessageSend(m.ChannelID, "현재 평가 등록을 하지 않은 사용자입니다.")
-		return
-	}
-	userChannel <- client.MatchInfo{Code: false}
-	s.ChannelMessageSend(m.ChannelID, "정상적으로 평가 등록이 취소되었습니다.")
-}
-
-func submissionCancelTask(s *discordgo.Session, m *discordgo.MessageCreate) {
-	// TODO: 리액션으로 확인 로직 필요
-	userChannel := c.MatchMap[m.Author.ID]
-	if userChannel == nil {
-		s.ChannelMessageSend(m.ChannelID, "현재 제출을 하지 않은 사용자입니다.")
-		return
-	}
-	userChannel <- client.MatchInfo{Code: false}
-	s.ChannelMessageSend(m.ChannelID, "정상적으로 서브젝트 제출이 취소되었습니다.")
-}
-
-func submissionTask(s *discordgo.Session, m *discordgo.MessageCreate) {
-	// TODO: 리액션으로 확인 로직 필요
-	command := strings.Split(m.Content, " ")
-	matchedUserID := make(chan client.MatchInfo, 2)
-	if len(command) != 3 {
-		submitEmbed := embed.NewEmbed()
-		submitEmbed.SetTitle("제출 명령어는 다음과 같이 입력해야 합니다.")
-		submitEmbed.AddField(
-			"<명령어 예시>",
-			prefix + "제출 <github repo url> <subject name>\n"+
-				prefix + "제출 https://github.com/example123/ExampleRepo Day01")
-		s.ChannelMessageSendEmbed(m.ChannelID, submitEmbed.MessageEmbed)
-		return
-	}
-	msg := c.Submit(command[2], m.Author.ID, command[1], matchedUserID)
-	s.ChannelMessageSend(m.ChannelID, msg)
-	switch evalInfo := <-matchedUserID; evalInfo.Code {
-	case false:
-		close(matchedUserID)
-	case true:
-		dmChan, _ := s.UserChannelCreate(m.Author.ID)
-		matchSuccessEmbed := embed.NewEmbed()
-		matchSuccessEmbed.SetTitle("평가 매칭 성공!")
-		matchSuccessEmbed.AddField(
-			"평가자 intra ID:",
-			c.FindIntraByUID(evalInfo.InterviewerID),
-		)
-		matchSuccessEmbed.AddField(
-			"평가할 서브젝트:",
-			evalInfo.Subject.SubjectName+"\n"+
-				evalInfo.Subject.SubjectURL,
-		)
-		s.ChannelMessageSendEmbed(dmChan.ID, matchSuccessEmbed.MessageEmbed)
-	}
 }
 
 // sendCommandDetail 함수는 명령어 정보를 전부 전송하는 함수이다.
