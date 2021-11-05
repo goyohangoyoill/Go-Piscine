@@ -9,7 +9,7 @@ import (
 )
 
 func registerEvalResponse(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
-	matchedUserID := make(chan client.MatchInfo, 2)
+	matchedUserID := make(chan client.MatchInfo)
 	msg := c.Register(r.UserID, matchedUserID)
 	s.ChannelMessageSend(r.ChannelID, msg)
 	evalInfo := <-matchedUserID
