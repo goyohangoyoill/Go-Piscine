@@ -145,7 +145,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 	if strings.HasPrefix(m.Content, prefix + "제출 ") { // !제출 <github repo url> <subject name>
-		if submitMIDs[m.Author.ID] == "" {
+		if submitMIDs[m.Author.ID] != "" {
 			return
 		}
 		submissionTask(s, m)
@@ -156,7 +156,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 	if m.Content == prefix + "평가등록" {
-		if registerMIDs[m.Author.ID] == "" {
+		if registerMIDs[m.Author.ID] != "" {
 			return
 		}
 		registerEvalTask(s, m)
