@@ -60,6 +60,7 @@ func removeClient(list []string, i int) []string {
 func NewClient() (ret *Client) {
 	ret = &Client{}
 	ret.MatchMap = make(map[string]chan MatchInfo)
+	ret.SubmittedSubjectMap = make(map[string]SubjectInfo)
 	return ret
 }
 
