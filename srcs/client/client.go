@@ -138,6 +138,8 @@ func (c *Client) ModifyId(uid, name string) (msg string) {
 // 서브젝트 제출을 수행하고 작업이 성공적으로 이루어졌는지 여부를 알리는 msg 를 반환하는 함수이다.
 // Eval Queue 에 사용자가 있는지 Mutex 를 걸고 확인한 후에 있다면 매칭을 진행해야한다. ** MUTEX 활용 필수!!
 func (c *Client) Submit(sName, uid, url string, matchedUserId chan MatchInfo) (msg string) {
+	fmt.Println("Submit called")
+	defer fmt.Println("Submit ended")
 	// convertID := SubjectStrMap[sid]
 	if c.MatchMap[uid] != nil {
 		return "이미 큐에 등록된 사용자입니다."
@@ -191,6 +193,8 @@ func (c *Client) Register(uid string, matchedUid chan MatchInfo) (msg string) {
 	if c.MatchMap[uid] != nil {
 		return "이미 큐에 등록된 사용자입니다."
 	}
+	fmt.Println("Register called")
+	defer fmt.Println("Register ended")
 	QueueMutex.Lock()
 	defer QueueMutex.Unlock()
 	if len(IntervieweeList) == 0 {

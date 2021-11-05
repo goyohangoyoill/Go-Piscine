@@ -98,6 +98,7 @@ func messageReactionAdd(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
 			s.ChannelMessageDelete(r.ChannelID, r.MessageID)
 			s.ChannelMessageSend(r.ChannelID, "제출을 취소하셨습니다.")
 		}
+		return
 	case signupMIDs[r.UserID]:
 		switch r.Emoji.Name {
 		case "⭕":
