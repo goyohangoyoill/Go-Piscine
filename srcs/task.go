@@ -11,7 +11,8 @@ func registerEvalResponse(s *discordgo.Session, r *discordgo.MessageReactionAdd)
 	matchedUserID := make(chan client.MatchInfo, 2)
 	msg := c.Register(r.UserID, matchedUserID)
 	s.ChannelMessageSend(r.ChannelID, msg)
-	switch evalInfo := <-matchedUserID; evalInfo.Code {
+	evalInfo := <-matchedUserID
+	switch evalInfo.Code {
 	case false:
 		// pass
 	case true:
@@ -51,6 +52,8 @@ func RegisterCancelTask(s *discordgo.Session, m *discordgo.MessageCreate) {
 		s.ChannelMessageSend(m.ChannelID, "현재 평가 등록을 하지 않은 사용자입니다.")
 		return
 	}
+	msg := c.SubmitCancel(m.Author.ID)
+	s.ChannelMessageSend(m.ChannelID, msg)
 	userChannel <- client.MatchInfo{Code: false}
 	s.ChannelMessageSend(m.ChannelID, "정상적으로 평가 등록이 취소되었습니다.")
 }
@@ -61,7 +64,8 @@ func submissionResponse(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
 	matchedUserID := make(chan client.MatchInfo, 2)
 	msg := c.Submit(subjectID, r.UserID, gitUrl, matchedUserID)
 	s.ChannelMessageSend(r.ChannelID, msg)
-	switch evalInfo := <-matchedUserID; evalInfo.Code {
+	evalInfo := <-matchedUserID
+	switch evalInfo.Code {
 	case false:
 		// pass
 	case true:
