@@ -102,6 +102,8 @@ func submissionTask(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 	dmChan, _ := s.UserChannelCreate(m.Author.ID)
 	submitMsg, _ := s.ChannelMessageSend(dmChan.ID, "**주의** 평가가 매칭된 후, 제출을 취소할 수 없음!\n" +
+		"평가받을 Git Repo: " + command[1] + "\n" +
+		"평가받을 Subject : " + command[2] + "\n" +
 		"아직 매칭되지 않은 평가를 취소하고 싶다면 " + prefix + "제출취소 명령어를 사용하세요")
 	submitMIDs[m.Author.ID] = submitMsg.ID
 	submitURLs[m.Author.ID] = command[1]
