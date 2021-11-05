@@ -9,7 +9,7 @@ import (
 )
 
 func registerEvalResponse(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
-	matchedUserID := make(chan client.MatchInfo)
+	matchedUserID := make(chan client.MatchInfo, 2)
 	go c.Register(r.UserID, matchedUserID)
 	evalInfo := <-matchedUserID
 	fmt.Println("eval match complete (register wait case)")
@@ -62,7 +62,7 @@ func RegisterCancelTask(s *discordgo.Session, m *discordgo.MessageCreate) {
 func submissionResponse(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
 	gitUrl := submitURLs[r.UserID]
 	subjectID := submitSIDs[r.UserID]
-	matchedUserID := make(chan client.MatchInfo)
+	matchedUserID := make(chan client.MatchInfo, 2)
 	go c.Submit(subjectID, r.UserID, gitUrl, matchedUserID)
 	evalInfo := <-matchedUserID
 	fmt.Println("eval match complete (submit wait case)")
