@@ -34,7 +34,6 @@ func registerEvalResponse(s *discordgo.Session, r *discordgo.MessageReactionAdd)
 		s.ChannelMessageSendEmbed(dmChan.ID, matchSuccessEmbed.MessageEmbed)
 	}
 	delete(registerMIDs, r.UserID)
-	close(matchedUserID)
 }
 
 func registerEvalTask(s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -80,7 +79,6 @@ func submissionResponse(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
 		)
 		s.ChannelMessageSendEmbed(dmChan.ID, matchSuccessEmbed.MessageEmbed)
 	}
-	close(matchedUserID)
 	delete(submitMIDs, r.UserID)
 	delete(submitURLs, r.UserID)
 	delete(submitSIDs, r.UserID)
