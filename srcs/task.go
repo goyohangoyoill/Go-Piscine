@@ -10,8 +10,7 @@ import (
 
 func registerEvalResponse(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
 	matchedUserID := make(chan client.MatchInfo)
-	msg := c.Register(r.UserID, matchedUserID)
-	s.ChannelMessageSend(r.ChannelID, msg)
+	go c.Register(r.UserID, matchedUserID)
 	evalInfo := <-matchedUserID
 	fmt.Println("eval match complete (register wait case)")
 	switch evalInfo.Code {
@@ -64,8 +63,7 @@ func submissionResponse(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
 	gitUrl := submitURLs[r.UserID]
 	subjectID := submitSIDs[r.UserID]
 	matchedUserID := make(chan client.MatchInfo)
-	msg := c.Submit(subjectID, r.UserID, gitUrl, matchedUserID)
-	s.ChannelMessageSend(r.ChannelID, msg)
+	go c.Submit(subjectID, r.UserID, gitUrl, matchedUserID)
 	evalInfo := <-matchedUserID
 	fmt.Println("eval match complete (submit wait case)")
 	switch evalInfo.Code {
