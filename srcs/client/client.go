@@ -84,7 +84,7 @@ func (c *Client) SignUp(uid, name string, ctx context.Context) (msg string) {
 	err := c.MDB.Collection("people").FindOne(
 		ctx,
 		bson.D{{"password", uid}},
-		).Decode(&searchPerson)
+	).Decode(&searchPerson)
 	if err != nil {
 		log.Error(err)
 	}
@@ -94,7 +94,7 @@ func (c *Client) SignUp(uid, name string, ctx context.Context) (msg string) {
 	err = c.MDB.Collection("people").FindOne(
 		ctx,
 		bson.D{{"name", name}},
-		).Decode(&searchPerson)
+	).Decode(&searchPerson)
 	if err != nil {
 		log.Error(err)
 	}
@@ -102,10 +102,10 @@ func (c *Client) SignUp(uid, name string, ctx context.Context) (msg string) {
 		return "이미 등록된 IntraID 입니다."
 	}
 	curUser := schema.Person{
-		Name: name,
+		Name:     name,
 		Password: uid,
-		Course: 0,
-		Point: 5,
+		Course:   0,
+		Point:    5,
 	}
 	_, err = c.MDB.Collection("people").InsertOne(ctx, curUser)
 	if err != nil {
@@ -132,34 +132,39 @@ func (c *Client) IsUserInQ(uid string) bool {
 }
 
 // ModifyId 함수는 uid 를 기반으로 intraID 를 변경하는 함수이다.
-func (c *Client) ModifyId(uid, name string) (msg string) {
-	//tx, tErr := record.DB.Begin()
-	//if tErr != nil {
-	//	return "인트라 ID 수정오류: 트랜잭션 초기화"
-	//}
-	//defer tx.Rollback()
-	//// ret nil, err nil    : 사용자 없음
-	//// ret nil, err        : 에러
-	//// ret, err nil        : 사용자 있음
-	//// ret, err            : 에러
-	//if ret, qErr := tx.Query(
-	//	`SELECT id FROM people WHERE password = ? ;`,
-	//	uid); qErr != nil {
-	//	if ret != nil {
-	//		return "인트라 ID 수정오류: 매칭되는 사용자가 없음"
-	//	}
-	//	if _, eErr := tx.Exec(
-	//		`UPDATE people SET name = ? WHERE password = ? ;`,
-	//		name, uid); eErr != nil {
-	//		return "인트라 ID 수정오류: 수정 실패" + name + uid
-	//	}
-	//}
-	//tErr = tx.Commit()
-	//if tErr != nil {
-	//	return "인트라 ID 수정오류: 트랜잭션 적용"
-	//} else {
-	//	return "인트라 ID 수정 완료"
-	//}
+func (c *Client) ModifyId(uid, name string, ctx context.Context) (msg string) {
+	searchPerson := schema.Person{}
+	err := c.MDB.Collection("people").FindOne(
+		ctx,
+		bson.D{{"password", uid}},
+	).Decode(&searchPerson)
+	if err != nil {
+		log.Error(err)
+	}
+	if searchPerson.Password == "" {
+		return "해당 계정으로 가입한 사용자가 없습니다."
+	}
+	err = c.MDB.Collection("people").FindOne(
+		ctx,
+		bson.D{{"name", name}},
+	).Decode(&searchPerson)
+	if err != nil {
+		log.Error(err)
+	}
+	if searchPerson.Name != "" {
+		return "같은 이름의 인트라ID가 존재합니다."
+	}
+	filter := bson.M{"password": uid}
+	update := bson.M{
+		"$set": bson.M{
+			"name": name,
+		},
+	}
+	_, err = c.MDB.Collection("people").UpdateOne(ctx, filter, update)
+	if err != nil {
+		log.Error(err)
+	}
+	return "인트라ID 수정이 완료되었습니다."
 }
 
 // Submit 함수는 sid(subject id) uid(userID) url(github repo link)와
