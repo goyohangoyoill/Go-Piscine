@@ -79,56 +79,39 @@ func NewClient(mDB *mongo.Database) (ret *Client) {
 
 // SignUp 함수는 uid(userID) intraID를 받아 DB 에 추가하는 함수이다.
 // DB 에 추가하기 전에 기존에 가입된 intraID 라면 가입이 되지 않는다.
-func (c *Client) SignUp(uid, name string) (msg string) {
+func (c *Client) SignUp(uid, name string, ctx context.Context) (msg string) {
 	searchPerson := schema.Person{}
-	err := c.MDB.Collection("people").FindOne(context.Background(), bson.D{{"password", uid}}).Decode(&searchPerson)
+	err := c.MDB.Collection("people").FindOne(
+		ctx,
+		bson.D{{"password", uid}},
+		).Decode(&searchPerson)
 	if err != nil {
 		log.Error(err)
 	}
 	if searchPerson.Password != "" {
 		return "이미 등록된 디스코드 계정입니다."
 	}
-	err = c.MDB.Collection("people").FindOne(context.Background(), bson.D{{"name", name}}).Decode(&searchPerson)
+	err = c.MDB.Collection("people").FindOne(
+		ctx,
+		bson.D{{"name", name}},
+		).Decode(&searchPerson)
 	if err != nil {
 		log.Error(err)
 	}
 	if searchPerson.Name != "" {
 		return "이미 등록된 IntraID 입니다."
 	}
-
-	//tx, tErr := record.DB.Begin()
-	//if tErr != nil {
-	//	return "가입오류: 트랜잭션 초기화"
-	//}
-	//defer tx.Rollback()
-	//// ret nil, err nil    : 사용자 없음
-	//// ret nil, err        : 에러
-	//// ret, err nil        : 사용자 있음
-	//// ret, err            : 에러
-	//if ret, qErr := tx.Query(
-	//	`SELECT id FROM people WHERE name = ? ;`,
-	//	name); qErr != nil {
-	//	if ret != nil {
-	//		return "가입오류: 이미 사용중인 이름"
-	//	}
-	//	if ret, qErr := tx.Query(
-	//		`SELECT id FROM people WHERE password=?`, name); qErr != nil {
-	//		if ret != nil {
-	//			return "가입오류: 이미 가입된 사용자"
-	//		}
-	//	}
-	//	if _, eErr := tx.Exec(
-	//		`INSERT INTO people ( name, password ) VALUES ( ?, ? ) ;`,
-	//		name, uid); eErr != nil {
-	//		return "가입오류: 생성 실패"
-	//	}
-	//}
-	//tErr = tx.Commit()
-	//if tErr != nil {
-	//	return "가입오류: 트랜잭션 적용"
-	//} else {
-	//	return "가입 완료"
-	//}
+	curUser := schema.Person{
+		Name: name,
+		Password: uid,
+		Course: 0,
+		Point: 5,
+	}
+	_, err = c.MDB.Collection("people").InsertOne(ctx, curUser)
+	if err != nil {
+		log.Error(err)
+	}
+	return "인트라 등록이 완료되었습니다."
 }
 
 // IsUserInQ 함수는 uid 를 바탕으로 사용자가 큐에 등록했는지를 확인하는 함수이다.

@@ -4,6 +4,7 @@ package main
 // Discord Bot 서버를 구동하는 프로젝트입니다.
 
 import (
+	"context"
 	"go.mongodb.org/mongo-driver/mongo"
 	"os"
 	"os/signal"
@@ -110,7 +111,7 @@ func messageReactionAdd(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
 		switch r.Emoji.Name {
 		case "⭕":
 			s.ChannelMessageDelete(r.ChannelID, r.MessageID)
-			msg := c.SignUp(r.UserID, IntraIDs[r.UserID])
+			msg := c.SignUp(r.UserID, IntraIDs[r.UserID], context.Background())
 			s.ChannelMessageSend(r.ChannelID, msg)
 		case "❌":
 			s.ChannelMessageDelete(r.ChannelID, r.MessageID)
