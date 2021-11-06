@@ -1,9 +1,12 @@
 package client
 
 import (
+	"context"
 	"fmt"
 	log "github.com/sirupsen/logrus"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"piscine-golang-interact/schema"
 	"strconv"
 	"sync"
 	"time"
@@ -43,7 +46,7 @@ type Client struct {
 	// 해당 유저가 매칭 성공시에 상대의 uid 를 받기 위한 채널을 value 로 한다.
 	MatchMap            map[string]chan MatchInfo
 	SubmittedSubjectMap map[string]SubjectInfo
-	MClient *mongo.Client
+	MDB                 *mongo.Database
 }
 
 func init() {
@@ -66,9 +69,9 @@ func removeClient(list *[]string, i int) {
 }
 
 // NewClient 함수는 Client 구조체의 생성자이다.
-func NewClient(mClient *mongo.Client) (ret *Client) {
+func NewClient(mDB *mongo.Database) (ret *Client) {
 	ret = &Client{}
-	ret.MClient = mClient
+	ret.MDB = mDB
 	ret.MatchMap = make(map[string]chan MatchInfo)
 	ret.SubmittedSubjectMap = make(map[string]SubjectInfo)
 	return ret
@@ -77,6 +80,22 @@ func NewClient(mClient *mongo.Client) (ret *Client) {
 // SignUp 함수는 uid(userID) intraID를 받아 DB 에 추가하는 함수이다.
 // DB 에 추가하기 전에 기존에 가입된 intraID 라면 가입이 되지 않는다.
 func (c *Client) SignUp(uid, name string) (msg string) {
+	searchPerson := schema.Person{}
+	err := c.MDB.Collection("people").FindOne(context.Background(), bson.D{{"password", uid}}).Decode(&searchPerson)
+	if err != nil {
+		log.Error(err)
+	}
+	if searchPerson.Password != "" {
+		return "이미 등록된 디스코드 계정입니다."
+	}
+	err = c.MDB.Collection("people").FindOne(context.Background(), bson.D{{"name", name}}).Decode(&searchPerson)
+	if err != nil {
+		log.Error(err)
+	}
+	if searchPerson.Name != "" {
+		return "이미 등록된 IntraID 입니다."
+	}
+
 	//tx, tErr := record.DB.Begin()
 	//if tErr != nil {
 	//	return "가입오류: 트랜잭션 초기화"
@@ -357,29 +376,29 @@ func (c *Client) MatchState() (grades EmbedInfo) {
 
 // FindIntraByUID 함수는 uid 를 인자로 받아 intraID 를 반환하는 함수이다.
 func (c *Client) FindIntraByUID(uid string) (intraID string) {
-	tx, tErr := record.DB.Begin()
-	if tErr != nil {
-		return "트랜잭션 초기화 오류"
-	}
-	defer tx.Rollback()
-	log.Println("find intra ID from uid:", uid)
-	queryText := fmt.Sprintf("SELECT name FROM people WHERE password = %s ;", uid)
-	if rows, qErr := tx.Query(queryText); qErr != nil {
-		log.Warn(qErr)
-		return "가입되지 않은 사용자"
-	} else {
-		for rows.Next() {
-			if sErr := rows.Scan(&intraID); sErr != nil {
-				return "잘못된 참조"
-			}
-		}
-		rows.Close()
-	}
-	tErr = tx.Commit()
-	if tErr != nil {
-		return "트랜잭션 적용 오류"
-	} else {
-		log.Println("사옹자의 인트라는", intraID, "이다.")
-		return
-	}
+	//tx, tErr := record.DB.Begin()
+	//if tErr != nil {
+	//	return "트랜잭션 초기화 오류"
+	//}
+	//defer tx.Rollback()
+	//log.Println("find intra ID from uid:", uid)
+	//queryText := fmt.Sprintf("SELECT name FROM people WHERE password = %s ;", uid)
+	//if rows, qErr := tx.Query(queryText); qErr != nil {
+	//	log.Warn(qErr)
+	//	return "가입되지 않은 사용자"
+	//} else {
+	//	for rows.Next() {
+	//		if sErr := rows.Scan(&intraID); sErr != nil {
+	//			return "잘못된 참조"
+	//		}
+	//	}
+	//	rows.Close()
+	//}
+	//tErr = tx.Commit()
+	//if tErr != nil {
+	//	return "트랜잭션 적용 오류"
+	//} else {
+	//	log.Println("사옹자의 인트라는", intraID, "이다.")
+	//	return
+	//}
 }

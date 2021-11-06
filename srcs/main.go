@@ -23,7 +23,7 @@ const (
 )
 
 var (
-	mongoClient *mongo.Client
+	mDB *mongo.Database
 
 	c            *client.Client
 	registerMIDs map[string]string
@@ -48,11 +48,11 @@ func init() {
 	signupMIDs = make(map[string]string)
 	modifyMIDs = make(map[string]string)
 	IntraIDs = make(map[string]string)
-	mongoClient, _ = mongodb.MongoConn()
-	if mongoClient == nil {
+	mClient, _ := mongodb.MongoConn()
+	if mClient == nil {
 		log.Errorf("mongoDB connection Failed")
 	}
-	c = client.NewClient(mongoClient)
+	c = client.NewClient(mClient.Database("k8sdb"))
 }
 
 func main() {
