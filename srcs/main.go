@@ -121,7 +121,7 @@ func messageReactionAdd(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
 		switch r.Emoji.Name {
 		case "⭕":
 			s.ChannelMessageDelete(r.ChannelID, r.MessageID)
-			msg := c.ModifyId(r.UserID, IntraIDs[r.UserID])
+			msg := c.ModifyId(r.UserID, IntraIDs[r.UserID], context.Background())
 			s.ChannelMessageSend(r.ChannelID, msg)
 		case "❌":
 			s.ChannelMessageDelete(r.ChannelID, r.MessageID)
