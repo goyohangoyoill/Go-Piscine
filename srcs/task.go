@@ -1,9 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"github.com/bwmarrin/discordgo"
 	embed "github.com/clinet/discordgo-embed"
+	log "github.com/sirupsen/logrus"
 	"piscine-golang-interact/client"
 	"strings"
 )
@@ -12,10 +12,10 @@ func registerEvalResponse(s *discordgo.Session, r *discordgo.MessageReactionAdd)
 	matchedUserID := make(chan client.MatchInfo)
 	go c.Register(r.UserID, matchedUserID)
 	evalInfo := <-matchedUserID
-	fmt.Println("eval match complete (register wait case)")
+	log.Println("eval match complete (register wait case)")
 	switch evalInfo.Code {
 	case false:
-		fmt.Println("register canceled")
+		log.Println("register canceled")
 	case true:
 		dmChan, _ := s.UserChannelCreate(r.UserID)
 		matchSuccessEmbed := embed.NewEmbed()
@@ -40,8 +40,8 @@ func registerEvalResponse(s *discordgo.Session, r *discordgo.MessageReactionAdd)
 
 func registerEvalTask(s *discordgo.Session, m *discordgo.MessageCreate) {
 	dmChan, _ := s.UserChannelCreate(m.Author.ID)
-	regMsg, _ := s.ChannelMessageSend(dmChan.ID, "**주의** 평가가 매칭된 후, 평가는 취소할 수 없음!\n" +
-		"아직 매칭되지 않은 평가를 취소하고 싶다면 " + prefix + "평가취소 명령어를 사용하세요")
+	regMsg, _ := s.ChannelMessageSend(dmChan.ID, "**주의** 평가가 매칭된 후, 평가는 취소할 수 없음!\n"+
+		"아직 매칭되지 않은 평가를 취소하고 싶다면 "+prefix+"평가취소 명령어를 사용하세요")
 	registerMIDs[m.Author.ID] = regMsg.ID
 	s.MessageReactionAdd(dmChan.ID, regMsg.ID, "⭕")
 	s.MessageReactionAdd(dmChan.ID, regMsg.ID, "❌")
@@ -65,10 +65,10 @@ func submissionResponse(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
 	matchedUserID := make(chan client.MatchInfo)
 	go c.Submit(subjectID, r.UserID, gitUrl, matchedUserID)
 	evalInfo := <-matchedUserID
-	fmt.Println("eval match complete (submit wait case)")
+	log.Println("eval match complete (submit wait case)")
 	switch evalInfo.Code {
 	case false:
-		fmt.Println("submission canceled")
+		log.Println("submission canceled")
 	case true:
 		dmChan, _ := s.UserChannelCreate(r.UserID)
 		matchSuccessEmbed := embed.NewEmbed()
@@ -92,23 +92,29 @@ func submissionResponse(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
 func submissionTask(s *discordgo.Session, m *discordgo.MessageCreate) {
 	command := strings.Split(m.Content, " ")
 	if len(command) != 3 {
+		log.Println("uid:", m.Author.ID, ", 포맷과 다른 제출")
 		submitEmbed := embed.NewEmbed()
 		submitEmbed.SetTitle("제출 명령어는 다음과 같이 입력해야 합니다.")
 		submitEmbed.AddField(
 			"<명령어 예시>",
-			prefix + "제출 <github repo url> <subject name>\n"+
-				prefix + "제출 https://github.com/example123/ExampleRepo Day01")
+			prefix+"제출 <github repo url> <subject name>\n"+
+				prefix+"제출 https://github.com/example123/ExampleRepo Day01")
 		s.ChannelMessageSendEmbed(m.ChannelID, submitEmbed.MessageEmbed)
 		return
 	}
+	subjectName := client.ConvSubjectName(command[2])
+	if subjectName == "존재하지 않는 서브젝트" {
+		s.ChannelMessageSend(m.ChannelID, "서브젝트명 "+command[2]+" 는 존재하지 않습니다.")
+		return
+	}
 	dmChan, _ := s.UserChannelCreate(m.Author.ID)
-	submitMsg, _ := s.ChannelMessageSend(dmChan.ID, "**주의** 평가가 매칭된 후, 제출을 취소할 수 없음!\n" +
-		"평가받을 Git Repo: " + command[1] + "\n" +
-		"평가받을 Subject : " + command[2] + "\n" +
-		"아직 매칭되지 않은 평가를 취소하고 싶다면 " + prefix + "제출취소 명령어를 사용하세요")
+	submitMsg, _ := s.ChannelMessageSend(dmChan.ID, "***주의*** 평가가 매칭된 후, 제출을 취소할 수 없음!\n"+
+		"평가받을 Git Repo: "+command[1]+"\n"+
+		"평가받을 Subject : "+subjectName+"\n"+
+		"아직 매칭되지 않은 평가를 취소하고 싶다면 "+prefix+"제출취소 명령어를 사용하세요")
 	submitMIDs[m.Author.ID] = submitMsg.ID
 	submitURLs[m.Author.ID] = command[1]
-	submitSIDs[m.Author.ID] = command[2]
+	submitSIDs[m.Author.ID] = subjectName
 	s.MessageReactionAdd(dmChan.ID, submitMsg.ID, "⭕")
 	s.MessageReactionAdd(dmChan.ID, submitMsg.ID, "❌")
 }

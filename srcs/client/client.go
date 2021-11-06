@@ -2,6 +2,7 @@ package client
 
 import (
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"strconv"
 	"sync"
 	"time"
@@ -44,7 +45,7 @@ type Client struct {
 }
 
 func init() {
-	SubjectNumMap = map[int]string{0: "Day00", 1: "Day01", 2: "Day02", 3: "Day03", 4: "Day04", 5: "Day05", 100: "Rush00"}
+	SubjectNumMap = map[int]string{0: "DAY00", 1: "DAY01", 2: "DAY02", 3: "DAY03", 4: "DAY04", 5: "DAY05", 100: "RUSH00"}
 	SubjectInfoMap = make(map[string]SubjectInfo)
 	InitSubject(SubjectInfoMap)
 	IntervieweeList = make([]string, 0, 100)
@@ -53,6 +54,9 @@ func init() {
 }
 
 func removeClient(list []string, i int) []string {
+	if len(list) == i {
+		return list[:i]
+	}
 	return append(list[:i], list[i+1:]...)
 }
 
@@ -83,8 +87,7 @@ func (c *Client) SignUp(uid, name string) (msg string) {
 			return "가입오류: 이미 사용중인 이름"
 		}
 		if ret, qErr := tx.Query(
-			`SELECT id FROM peole WHERE password=$1`, name);
-		qErr != nil {
+			`SELECT id FROM people WHERE password=$1`, name); qErr != nil {
 			if ret != nil {
 				return "가입오류: 이미 가입된 사용자"
 			}
@@ -103,6 +106,24 @@ func (c *Client) SignUp(uid, name string) (msg string) {
 	}
 }
 
+// IsUserInQ 함수는 uid 를 바탕으로 사용자가 큐에 등록했는지를 확인하는 함수이다.
+func (c *Client) IsUserInQ(uid string) bool {
+	QueueMutex.Lock()
+	defer QueueMutex.Unlock()
+	for _, item := range InterviewerList {
+		if item == uid {
+			return true
+		}
+	}
+	for _, item := range IntervieweeList {
+		if item == uid {
+			return true
+		}
+	}
+	return false
+}
+
+// ModifyId 함수는 uid 를 기반으로 intraID 를 변경하는 함수이다.
 func (c *Client) ModifyId(uid, name string) (msg string) {
 	tx, tErr := record.DB.Begin()
 	if tErr != nil {
@@ -138,8 +159,8 @@ func (c *Client) ModifyId(uid, name string) (msg string) {
 // 서브젝트 제출을 수행하고 작업이 성공적으로 이루어졌는지 여부를 알리는 msg 를 반환하는 함수이다.
 // Eval Queue 에 사용자가 있는지 Mutex 를 걸고 확인한 후에 있다면 매칭을 진행해야한다. ** MUTEX 활용 필수!!
 func (c *Client) Submit(sName, uid, url string, matchedUserId chan MatchInfo) (msg string) {
-	fmt.Println("Submit called")
-	defer fmt.Println("Submit ended")
+	log.Println("Submit called")
+	defer log.Println("Submit ended")
 	// convertID := SubjectStrMap[sid]
 	if c.MatchMap[uid] != nil {
 		return "이미 큐에 등록된 사용자입니다."
@@ -174,7 +195,7 @@ func (c *Client) Submit(sName, uid, url string, matchedUserId chan MatchInfo) (m
 func (c *Client) SubmitCancel(uid string) (msg string) {
 	QueueMutex.Lock()
 	defer QueueMutex.Unlock()
-	for i, v := range IntervieweeList {
+	for i, v := range InterviewerList {
 		if v == uid {
 			c.MatchMap[uid] = nil
 			c.SubmittedSubjectMap[uid] = SubjectInfo{}
@@ -192,8 +213,8 @@ func (c *Client) Register(uid string, matchedUid chan MatchInfo) (msg string) {
 	if c.MatchMap[uid] != nil {
 		return "이미 큐에 등록된 사용자입니다."
 	}
-	fmt.Println("Register called")
-	defer fmt.Println("Register ended")
+	log.Println("Register called")
+	defer log.Println("Register ended")
 	QueueMutex.Lock()
 	defer QueueMutex.Unlock()
 	if len(IntervieweeList) == 0 {
@@ -261,10 +282,10 @@ func (c *Client) MyGrade(uid string) (grades EmbedInfo) {
 			} else {
 				tempLines = append(tempLines, "FAIL")
 			}
-			time := fmt.Sprintf("%d-%02d-%02d %02d:%02d:%02d\n",
+			nowTime := fmt.Sprintf("%d-%02d-%02d %02d:%02d:%02d\n",
 				stamp.Year(), stamp.Month(), stamp.Day(),
 				stamp.Hour(), stamp.Minute(), stamp.Second())
-			tempLines = append(tempLines, "Time: "+time)
+			tempLines = append(tempLines, "Time: "+nowTime)
 			grades.embedRows = append(
 				grades.embedRows,
 				EmbedRow{name: SubjectNumMap[course], lines: tempLines})
@@ -331,7 +352,7 @@ func (c *Client) FindIntraByUID(uid string) (intraID string) {
 		return "트랜잭션 초기화 오류"
 	}
 	defer tx.Rollback()
-	if rows, qErr := tx.Query(`SELECT name FROM people WHERE password = $1 ;`, uid); qErr != nil {
+	if rows, _ := tx.Query(`SELECT name FROM people WHERE password = $1 ;`, uid); rows == nil {
 		return "가입되지 않은 사용자"
 	} else {
 		for rows.Next() {

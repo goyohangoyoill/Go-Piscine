@@ -6,6 +6,7 @@ require (
 	github.com/bwmarrin/discordgo v0.23.2
 	github.com/clinet/discordgo-embed v0.0.0-20190411043415-d754bc1a576c
 	github.com/go-sql-driver/mysql v1.6.0
+	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/viper v1.9.0
 )
 

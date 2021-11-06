@@ -1,5 +1,10 @@
 package client
 
+import (
+	log "github.com/sirupsen/logrus"
+	"strings"
+)
+
 // SubjectInfo 구조체는 서브젝트 관련 정보들을 담고 있는 구조체이다.
 type SubjectInfo struct {
 	// SubjectName 는 Subject 의 이름이다.
@@ -33,11 +38,23 @@ const (
 )
 
 func InitSubject(sInfos map[string]SubjectInfo) {
-	sInfos["Day00"] = SubjectInfo{"Day00", 0, sDay00, vDay00}
-	sInfos["Day01"] = SubjectInfo{"Day01", 1, sDay01, vDay01}
-	sInfos["Day02"] = SubjectInfo{"Day02", 2, sDay02, vDay02}
-	sInfos["Day03"] = SubjectInfo{"Day03", 3, sDay03, vDay03}
-	sInfos["Day04"] = SubjectInfo{"Day04", 4, sDay04, vDay04}
-	sInfos["Day05"] = SubjectInfo{"Day05", 5, sDay05, vDay05}
-	sInfos["Rush00"] = SubjectInfo{"Rush00", 100, sRush00, vRush00}
+	sInfos["DAY00"] = SubjectInfo{"DAY00", 0, sDay00, vDay00}
+	sInfos["DAY01"] = SubjectInfo{"DAY01", 1, sDay01, vDay01}
+	sInfos["DAY02"] = SubjectInfo{"DAY02", 2, sDay02, vDay02}
+	sInfos["DAY03"] = SubjectInfo{"DAY03", 3, sDay03, vDay03}
+	sInfos["DAY04"] = SubjectInfo{"DAY04", 4, sDay04, vDay04}
+	sInfos["DAY05"] = SubjectInfo{"DAY05", 5, sDay05, vDay05}
+	sInfos["RUSH00"] = SubjectInfo{"RUSH00", 100, sRush00, vRush00}
+	sInfos["존재하지 않는 서브젝트"] = SubjectInfo{"nil", -1, "subject is not exist", "subject is not exist"}
+}
+
+func ConvSubjectName(src string) string {
+	convSrc := strings.ToTitle(src)
+	log.Println("after conv:", convSrc)
+	switch convSrc {
+	case "DAY00", "DAY01", "DAY02", "DAY03", "DAY04", "DAY05", "RUSH00":
+		return convSrc
+	default:
+		return "존재하지 않는 서브젝트"
+	}
 }

@@ -31,7 +31,7 @@ func Connection() error {
 	info := preparation()
 	for _, v := range info {
 		if v == "" {
-			return fmt.Errorf("Viper Invalid Value")
+			return fmt.Errorf("viper invalid value")
 		}
 	}
 	literal := info[3] + ":" + info[4] + "@tcp(" + info[1] + ")/" + info[2] + "?charset=utf8&parseTime=True&loc=Local"

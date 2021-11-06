@@ -7,7 +7,7 @@ import (
 type Match struct {
 	ID            int       `json:"id"`
 	IntervieweeID int       `json:"intervieweeID"`
-	InterviwereID int       `json:"interviwerID"`
+	InterviewerID int       `json:"interviewerID"`
 	Course        int       `json:"course"`
 	Score         int       `json:"score"`
 	Pass          bool      `json:"pass"`
