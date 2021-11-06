@@ -61,7 +61,6 @@ func main() {
 	//	log.Println("error creating DB connection", err)
 	//	return
 	//}
-
 	dg, err := discordgo.New("Bot " + (viper.Get("BOT_TOKEN")).(string))
 	if err != nil {
 		log.Println("error creating Discord session,", err)

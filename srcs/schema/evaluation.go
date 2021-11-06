@@ -6,9 +6,9 @@ import (
 
 type Match struct {
 	ID            int       `json:"id"`
-	IntervieweeID int       `json:"intervieweeID"`
-	InterviewerID int       `json:"interviewerID"`
-	Course        int       `json:"course"`
+	IntervieweeID string    `json:"intervieweeID"`
+	InterviewerID string    `json:"interviewerID"`
+	Course        string    `json:"course"`
 	Score         int       `json:"score"`
 	Pass          bool      `json:"pass"`
 	CreatedAt     time.Time `json:"created_at"`

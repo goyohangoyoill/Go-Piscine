@@ -40,7 +40,7 @@ func MongoConn() (client *mongo.Client, ctx context.Context) {
 
 	// Authentication 을 위한 Client Option 구성
 	clientOptions := options.Client().ApplyURI(
-		"mongodb://" + info[1] + "27017").SetAuth(
+		"mongodb://" + info[1] + ":27017").SetAuth(
 		options.Credential{
 			AuthSource: "",
 			Username:   info[3],
