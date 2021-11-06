@@ -45,7 +45,7 @@ func Connection() error {
 		name varchar(30) NOT NULL UNIQUE,
 		course int DEFAULT 0,
 		point int DEFAULT 5,
-		password varchar(255) NOT NULL,
+		password varchar(255) NOT NULL UNIQUE,
 		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 		updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 		deleted_at DATETIME

@@ -4,18 +4,18 @@ package main
 // Discord Bot 서버를 구동하는 프로젝트입니다.
 
 import (
+	"go.mongodb.org/mongo-driver/mongo"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
 
-	"piscine-golang-interact/client"
-	"piscine-golang-interact/record"
-
 	"github.com/bwmarrin/discordgo"
 	embed "github.com/clinet/discordgo-embed"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+	"piscine-golang-interact/client"
+	"piscine-golang-interact/mongodb"
 )
 
 const (
@@ -23,6 +23,8 @@ const (
 )
 
 var (
+	mongoClient *mongo.Client
+
 	c            *client.Client
 	registerMIDs map[string]string
 
@@ -46,14 +48,19 @@ func init() {
 	signupMIDs = make(map[string]string)
 	modifyMIDs = make(map[string]string)
 	IntraIDs = make(map[string]string)
-	c = client.NewClient()
+	mongoClient, _ = mongodb.MongoConn()
+	if mongoClient == nil {
+		log.Errorf("mongoDB connection Failed")
+	}
+	c = client.NewClient(mongoClient)
 }
 
 func main() {
-	if err := record.Connection(); err != nil {
-		log.Println("error creating DB connection", err)
-		return
-	}
+	//if err := record.Connection(); err != nil {
+	//	log.Println("error creating DB connection", err)
+	//	return
+	//}
+
 	dg, err := discordgo.New("Bot " + (viper.Get("BOT_TOKEN")).(string))
 	if err != nil {
 		log.Println("error creating Discord session,", err)
@@ -134,6 +141,10 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 	if m.Content == prefix+"제출" {
+		if c.FindIntraByUID(m.Author.ID) == "가입되지 않은 사용자" {
+			s.ChannelMessageSend(m.ChannelID, "피신에 참여중인 참가자가 아닙니다.")
+			return
+		}
 		submitEmbed := embed.NewEmbed()
 		submitEmbed.SetTitle("제출 명령어는 다음과 같이 입력해야 합니다.")
 		submitEmbed.AddField(
@@ -144,6 +155,10 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 	if strings.HasPrefix(m.Content, prefix+"제출 ") { // !제출 <github repo url> <subject name>
+		if c.FindIntraByUID(m.Author.ID) == "가입되지 않은 사용자" {
+			s.ChannelMessageSend(m.ChannelID, "피신에 참여중인 참가자가 아닙니다.")
+			return
+		}
 		if c.IsUserInQ(m.Author.ID) {
 			s.ChannelMessageSend(m.ChannelID, "이미 큐에 등록된 유저입니다.")
 			return
@@ -156,6 +171,10 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 	if m.Content == prefix+"평가등록" {
+		if c.FindIntraByUID(m.Author.ID) == "가입되지 않은 사용자" {
+			s.ChannelMessageSend(m.ChannelID, "피신에 참여중인 참가자가 아닙니다.")
+			return
+		}
 		if c.IsUserInQ(m.Author.ID) {
 			s.ChannelMessageSend(m.ChannelID, "이미 큐에 등록된 유저입니다.")
 			return

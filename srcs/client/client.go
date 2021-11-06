@@ -3,6 +3,7 @@ package client
 import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
+	"go.mongodb.org/mongo-driver/mongo"
 	"strconv"
 	"sync"
 	"time"
@@ -17,10 +18,10 @@ var SubjectNumMap map[int]string
 var SubjectInfoMap map[string]SubjectInfo
 
 // IntervieweeList 는 피평가자의 uid 를 이용하는 Queue 이다.
-var IntervieweeList []string
+var IntervieweeList *[]string
 
 // InterviewerList 는 평가자의 uid 를 이용하는 Queue 이다.
-var InterviewerList []string
+var InterviewerList *[]string
 
 // QueueMutex 는 대기열의 동기화를 위한 Mutex 이다.
 var QueueMutex sync.Mutex
@@ -42,27 +43,32 @@ type Client struct {
 	// 해당 유저가 매칭 성공시에 상대의 uid 를 받기 위한 채널을 value 로 한다.
 	MatchMap            map[string]chan MatchInfo
 	SubmittedSubjectMap map[string]SubjectInfo
+	MClient *mongo.Client
 }
 
 func init() {
 	SubjectNumMap = map[int]string{0: "DAY00", 1: "DAY01", 2: "DAY02", 3: "DAY03", 4: "DAY04", 5: "DAY05", 100: "RUSH00"}
 	SubjectInfoMap = make(map[string]SubjectInfo)
 	InitSubject(SubjectInfoMap)
-	IntervieweeList = make([]string, 0, 100)
-	InterviewerList = make([]string, 0, 100)
+	tempInterviewee := make([]string, 0, 100)
+	IntervieweeList = &tempInterviewee
+	tempInterviewer := make([]string, 0, 100)
+	InterviewerList = &tempInterviewer
 	QueueMutex = sync.Mutex{}
 }
 
-func removeClient(list []string, i int) []string {
-	if len(list) == i {
-		return list[:i]
+func removeClient(list *[]string, i int) {
+	if len(*list) == i {
+		*list = (*list)[:i]
+		return
 	}
-	return append(list[:i], list[i+1:]...)
+	*list = append((*list)[:i], (*list)[i+1:]...)
 }
 
 // NewClient 함수는 Client 구조체의 생성자이다.
-func NewClient() (ret *Client) {
+func NewClient(mClient *mongo.Client) (ret *Client) {
 	ret = &Client{}
+	ret.MClient = mClient
 	ret.MatchMap = make(map[string]chan MatchInfo)
 	ret.SubmittedSubjectMap = make(map[string]SubjectInfo)
 	return ret
@@ -71,51 +77,51 @@ func NewClient() (ret *Client) {
 // SignUp 함수는 uid(userID) intraID를 받아 DB 에 추가하는 함수이다.
 // DB 에 추가하기 전에 기존에 가입된 intraID 라면 가입이 되지 않는다.
 func (c *Client) SignUp(uid, name string) (msg string) {
-	tx, tErr := record.DB.Begin()
-	if tErr != nil {
-		return "가입오류: 트랜잭션 초기화"
-	}
-	defer tx.Rollback()
-	// ret nil, err nil    : 사용자 없음
-	// ret nil, err        : 에러
-	// ret, err nil        : 사용자 있음
-	// ret, err            : 에러
-	if ret, qErr := tx.Query(
-		`SELECT id FROM people WHERE name = $1 ;`,
-		name); qErr != nil {
-		if ret != nil {
-			return "가입오류: 이미 사용중인 이름"
-		}
-		if ret, qErr := tx.Query(
-			`SELECT id FROM people WHERE password=$1`, name); qErr != nil {
-			if ret != nil {
-				return "가입오류: 이미 가입된 사용자"
-			}
-		}
-		if _, eErr := tx.Exec(
-			`INSERT INTO people ( name, password ) VALUES ( ?, ? ) ;`,
-			name, uid); eErr != nil {
-			return "가입오류: 생성 실패"
-		}
-	}
-	tErr = tx.Commit()
-	if tErr != nil {
-		return "가입오류: 트랜잭션 적용"
-	} else {
-		return "가입 완료"
-	}
+	//tx, tErr := record.DB.Begin()
+	//if tErr != nil {
+	//	return "가입오류: 트랜잭션 초기화"
+	//}
+	//defer tx.Rollback()
+	//// ret nil, err nil    : 사용자 없음
+	//// ret nil, err        : 에러
+	//// ret, err nil        : 사용자 있음
+	//// ret, err            : 에러
+	//if ret, qErr := tx.Query(
+	//	`SELECT id FROM people WHERE name = ? ;`,
+	//	name); qErr != nil {
+	//	if ret != nil {
+	//		return "가입오류: 이미 사용중인 이름"
+	//	}
+	//	if ret, qErr := tx.Query(
+	//		`SELECT id FROM people WHERE password=?`, name); qErr != nil {
+	//		if ret != nil {
+	//			return "가입오류: 이미 가입된 사용자"
+	//		}
+	//	}
+	//	if _, eErr := tx.Exec(
+	//		`INSERT INTO people ( name, password ) VALUES ( ?, ? ) ;`,
+	//		name, uid); eErr != nil {
+	//		return "가입오류: 생성 실패"
+	//	}
+	//}
+	//tErr = tx.Commit()
+	//if tErr != nil {
+	//	return "가입오류: 트랜잭션 적용"
+	//} else {
+	//	return "가입 완료"
+	//}
 }
 
 // IsUserInQ 함수는 uid 를 바탕으로 사용자가 큐에 등록했는지를 확인하는 함수이다.
 func (c *Client) IsUserInQ(uid string) bool {
 	QueueMutex.Lock()
 	defer QueueMutex.Unlock()
-	for _, item := range InterviewerList {
+	for _, item := range *InterviewerList {
 		if item == uid {
 			return true
 		}
 	}
-	for _, item := range IntervieweeList {
+	for _, item := range *IntervieweeList {
 		if item == uid {
 			return true
 		}
@@ -125,33 +131,33 @@ func (c *Client) IsUserInQ(uid string) bool {
 
 // ModifyId 함수는 uid 를 기반으로 intraID 를 변경하는 함수이다.
 func (c *Client) ModifyId(uid, name string) (msg string) {
-	tx, tErr := record.DB.Begin()
-	if tErr != nil {
-		return "인트라 ID 수정오류: 트랜잭션 초기화"
-	}
-	defer tx.Rollback()
-	// ret nil, err nil    : 사용자 없음
-	// ret nil, err        : 에러
-	// ret, err nil        : 사용자 있음
-	// ret, err            : 에러
-	if ret, qErr := tx.Query(
-		`SELECT id FROM people WHERE password = $1 ;`,
-		uid); qErr != nil {
-		if ret != nil {
-			return "인트라 ID 수정오류: 매칭되는 사용자가 없음"
-		}
-		if _, eErr := tx.Exec(
-			`UPDATE people SET name = ? WHERE password = ? ;`,
-			name, uid); eErr != nil {
-			return "인트라 ID 수정오류: 수정 실패" + name + uid
-		}
-	}
-	tErr = tx.Commit()
-	if tErr != nil {
-		return "인트라 ID 수정오류: 트랜잭션 적용"
-	} else {
-		return "인트라 ID 수정 완료"
-	}
+	//tx, tErr := record.DB.Begin()
+	//if tErr != nil {
+	//	return "인트라 ID 수정오류: 트랜잭션 초기화"
+	//}
+	//defer tx.Rollback()
+	//// ret nil, err nil    : 사용자 없음
+	//// ret nil, err        : 에러
+	//// ret, err nil        : 사용자 있음
+	//// ret, err            : 에러
+	//if ret, qErr := tx.Query(
+	//	`SELECT id FROM people WHERE password = ? ;`,
+	//	uid); qErr != nil {
+	//	if ret != nil {
+	//		return "인트라 ID 수정오류: 매칭되는 사용자가 없음"
+	//	}
+	//	if _, eErr := tx.Exec(
+	//		`UPDATE people SET name = ? WHERE password = ? ;`,
+	//		name, uid); eErr != nil {
+	//		return "인트라 ID 수정오류: 수정 실패" + name + uid
+	//	}
+	//}
+	//tErr = tx.Commit()
+	//if tErr != nil {
+	//	return "인트라 ID 수정오류: 트랜잭션 적용"
+	//} else {
+	//	return "인트라 ID 수정 완료"
+	//}
 }
 
 // Submit 함수는 sid(subject id) uid(userID) url(github repo link)와
@@ -167,12 +173,12 @@ func (c *Client) Submit(sName, uid, url string, matchedUserId chan MatchInfo) (m
 	}
 	QueueMutex.Lock()
 	defer QueueMutex.Unlock()
-	if len(InterviewerList) == 0 {
-		IntervieweeList = append(IntervieweeList, uid)
+	if len(*InterviewerList) == 0 {
+		*IntervieweeList = append(*IntervieweeList, uid)
 		c.MatchMap[uid] = matchedUserId
 		c.SubmittedSubjectMap[uid] = SubjectInfoMap[sName]
 	} else {
-		matchedInterviewerID := InterviewerList[0]
+		matchedInterviewerID := (*InterviewerList)[0]
 		myMatchInfo := MatchInfo{
 			Code:          true,
 			IntervieweeID: uid,
@@ -185,7 +191,7 @@ func (c *Client) Submit(sName, uid, url string, matchedUserId chan MatchInfo) (m
 		go func() {
 			matchedUserId <- myMatchInfo
 		}()
-		InterviewerList = removeClient(InterviewerList, 0)
+		removeClient(InterviewerList, 0)
 	}
 	return "제출완료"
 }
@@ -195,7 +201,7 @@ func (c *Client) Submit(sName, uid, url string, matchedUserId chan MatchInfo) (m
 func (c *Client) SubmitCancel(uid string) (msg string) {
 	QueueMutex.Lock()
 	defer QueueMutex.Unlock()
-	for i, v := range InterviewerList {
+	for i, v := range *InterviewerList {
 		if v == uid {
 			c.MatchMap[uid] = nil
 			c.SubmittedSubjectMap[uid] = SubjectInfo{}
@@ -217,11 +223,11 @@ func (c *Client) Register(uid string, matchedUid chan MatchInfo) (msg string) {
 	defer log.Println("Register ended")
 	QueueMutex.Lock()
 	defer QueueMutex.Unlock()
-	if len(IntervieweeList) == 0 {
-		InterviewerList = append(InterviewerList, uid)
+	if len(*IntervieweeList) == 0 {
+		*InterviewerList = append(*InterviewerList, uid)
 		c.MatchMap[uid] = matchedUid
 	} else {
-		matchedIntervieweeID := IntervieweeList[0]
+		matchedIntervieweeID := (*IntervieweeList)[0]
 		myMatchInfo := MatchInfo{
 			Code:          true,
 			IntervieweeID: matchedIntervieweeID,
@@ -234,7 +240,7 @@ func (c *Client) Register(uid string, matchedUid chan MatchInfo) (msg string) {
 		go func() {
 			matchedUid <- myMatchInfo
 		}()
-		IntervieweeList = removeClient(IntervieweeList, 0)
+		removeClient(IntervieweeList, 0)
 	}
 	return "평가등록완료"
 }
@@ -244,55 +250,62 @@ func (c *Client) Register(uid string, matchedUid chan MatchInfo) (msg string) {
 func (c *Client) RegisterCancel(uid string) (msg string) {
 	QueueMutex.Lock()
 	defer QueueMutex.Unlock()
-	for i, v := range InterviewerList {
+	for _, val := range *InterviewerList {
+		log.Println("before remove:", val)
+	}
+	for i, v := range *InterviewerList {
 		if v == uid {
 			c.MatchMap[uid] = nil
 			removeClient(InterviewerList, i)
 			return "평가취소완료"
 		}
 	}
+	for _, val := range *InterviewerList {
+		log.Println("after remove:", val)
+	}
 	return "평가취소오류"
 }
 
 // MyGrade 함수는 uid 를 인자로 받아 해당 유저의 점수 정보를 리턴하는 함수이다.
 func (c *Client) MyGrade(uid string) (grades EmbedInfo) {
-	grades.title = "서브젝트 채점 현황"
-	tx, tErr := record.DB.Begin()
-	if tErr != nil {
-		return
-	}
-	defer tx.Rollback()
-	if rows, qErr := tx.Query(
-		`SELECT e.course, e.score, e.pass, e.updated_at FROM evaluation AS e JOIN people AS p ON e.interviewee_id = p.id WHERE p.password = $1 ;`,
-		uid); qErr != nil {
-		return
-	} else {
-		var course int
-		var score int
-		var pass bool
-		var stamp time.Time
-		for rows.Next() {
-			if sErr := rows.Scan(&course, &score, &pass, &stamp); sErr != nil {
-				return
-			}
-			tempLines := make([]string, 0, 3)
-			tempLines = append(tempLines, "Score: "+strconv.Itoa(score))
-			if pass {
-				tempLines = append(tempLines, "PASS")
-			} else {
-				tempLines = append(tempLines, "FAIL")
-			}
-			nowTime := fmt.Sprintf("%d-%02d-%02d %02d:%02d:%02d\n",
-				stamp.Year(), stamp.Month(), stamp.Day(),
-				stamp.Hour(), stamp.Minute(), stamp.Second())
-			tempLines = append(tempLines, "Time: "+nowTime)
-			grades.embedRows = append(
-				grades.embedRows,
-				EmbedRow{name: SubjectNumMap[course], lines: tempLines})
-		}
-		rows.Close()
-	}
-	_ = tx.Commit()
+	//grades.title = "서브젝트 채점 현황"
+	//tx, tErr := record.DB.Begin()
+	//if tErr != nil {
+	//	return
+	//}
+	//defer tx.Rollback()
+	//queryText := fmt.Sprintf("SELECT e.course, e.score, e.pass, e.updated_at" +
+	//	" FROM evaluation AS e JOIN people AS p" +
+	//	" ON e.interviewee_id = p.id WHERE p.password = %s ;", uid)
+	//if rows, qErr := tx.Query(queryText); qErr != nil {
+	//	return
+	//} else {
+	//	var course int
+	//	var score int
+	//	var pass bool
+	//	var stamp time.Time
+	//	for rows.Next() {
+	//		if sErr := rows.Scan(&course, &score, &pass, &stamp); sErr != nil {
+	//			return
+	//		}
+	//		tempLines := make([]string, 0, 3)
+	//		tempLines = append(tempLines, "Score: "+strconv.Itoa(score))
+	//		if pass {
+	//			tempLines = append(tempLines, "PASS")
+	//		} else {
+	//			tempLines = append(tempLines, "FAIL")
+	//		}
+	//		nowTime := fmt.Sprintf("%d-%02d-%02d %02d:%02d:%02d\n",
+	//			stamp.Year(), stamp.Month(), stamp.Day(),
+	//			stamp.Hour(), stamp.Minute(), stamp.Second())
+	//		tempLines = append(tempLines, "Time: "+nowTime)
+	//		grades.embedRows = append(
+	//			grades.embedRows,
+	//			EmbedRow{name: SubjectNumMap[course], lines: tempLines})
+	//	}
+	//	rows.Close()
+	//}
+	//_ = tx.Commit()
 	return
 }
 
@@ -317,32 +330,29 @@ func matchEmbedRow(s string, p *map[string]string, l *[]string) EmbedRow {
 func (c *Client) MatchState() (grades EmbedInfo) {
 	grades.title = "평가 및 피평가 매칭 현황"
 	people := make(map[string]string)
-	tx, tErr := record.DB.Begin()
-	if tErr != nil {
-		return
-	}
-	defer tx.Rollback()
-	if rows, qErr := tx.Query(`SELECT name, password FROM people`); qErr != nil {
-		return
-	} else {
-		var name string
-		var pass string
-		for rows.Next() {
-			if sErr := rows.Scan(&name, &pass); sErr != nil {
-				return
-			}
-			people[pass] = name
-		}
-		rows.Close()
-	}
-	tErr = tx.Commit()
-	if tErr != nil {
-		return
-	} else {
-		grades.embedRows = append(grades.embedRows, matchEmbedRow("평가자", &people, &InterviewerList))
-		grades.embedRows = append(grades.embedRows, matchEmbedRow("피평가자", &people, &IntervieweeList))
-		return
-	}
+	//tx, tErr := record.DB.Begin()
+	//if tErr != nil {
+	//	return
+	//}
+	//defer tx.Rollback()
+	//if rows, qErr := tx.Query(`SELECT name, password FROM people`); qErr != nil {
+	//	return
+	//} else {
+	//	var name string
+	//	var pass string
+	//	for rows.Next() {
+	//		if sErr := rows.Scan(&name, &pass); sErr != nil {
+	//			return
+	//		}
+	//		people[pass] = name
+	//	}
+	//	rows.Close()
+	//}
+	//tErr = tx.Commit()
+
+	grades.embedRows = append(grades.embedRows, matchEmbedRow("평가자", &people, InterviewerList))
+	grades.embedRows = append(grades.embedRows, matchEmbedRow("피평가자", &people, IntervieweeList))
+	return
 }
 
 // FindIntraByUID 함수는 uid 를 인자로 받아 intraID 를 반환하는 함수이다.
@@ -352,7 +362,10 @@ func (c *Client) FindIntraByUID(uid string) (intraID string) {
 		return "트랜잭션 초기화 오류"
 	}
 	defer tx.Rollback()
-	if rows, _ := tx.Query(`SELECT name FROM people WHERE password = $1 ;`, uid); rows == nil {
+	log.Println("find intra ID from uid:", uid)
+	queryText := fmt.Sprintf("SELECT name FROM people WHERE password = %s ;", uid)
+	if rows, qErr := tx.Query(queryText); qErr != nil {
+		log.Warn(qErr)
 		return "가입되지 않은 사용자"
 	} else {
 		for rows.Next() {
@@ -366,6 +379,7 @@ func (c *Client) FindIntraByUID(uid string) (intraID string) {
 	if tErr != nil {
 		return "트랜잭션 적용 오류"
 	} else {
+		log.Println("사옹자의 인트라는", intraID, "이다.")
 		return
 	}
 }

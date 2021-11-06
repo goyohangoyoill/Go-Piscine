@@ -53,7 +53,7 @@ func RegisterCancelTask(s *discordgo.Session, m *discordgo.MessageCreate) {
 		s.ChannelMessageSend(m.ChannelID, "현재 평가 등록을 하지 않은 사용자입니다.")
 		return
 	}
-	msg := c.SubmitCancel(m.Author.ID)
+	msg := c.RegisterCancel(m.Author.ID)
 	s.ChannelMessageSend(m.ChannelID, msg)
 	userChannel <- client.MatchInfo{Code: false}
 	s.ChannelMessageSend(m.ChannelID, "정상적으로 평가 등록이 취소되었습니다.")
