@@ -155,14 +155,37 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		sendEmbedPretty(s, m.ChannelID, grade)
 		return
 	}
-	if m.Content == prefix+"GOAHEAD" && (m.Author.ID == "318743234601811969" ||
-		m.Author.ID == "905699384581312542" || m.Author.ID == "382356905990815744" ||
-		m.Author.ID == "383847223504666626") {
-		mode = !mode
-		if mode {
-			s.ChannelMessageSend(m.ChannelID, "사용자 등록모드 시작")
-		} else {
-			s.ChannelMessageSend(m.ChannelID, "사용자 등록모드 종료")
+	if m.Content == prefix+"서브젝트목록" {
+		sUrls := client.GetAllSubjectURL()
+		urlEmbed := embed.NewEmbed()
+		urlEmbed.SetTitle("서브젝트 목록")
+		urlEmbed.AddField("DAY00", sUrls[0])
+		urlEmbed.AddField("DAY01", sUrls[1])
+		urlEmbed.AddField("DAY02", sUrls[2])
+		urlEmbed.AddField("DAY03", sUrls[3])
+		urlEmbed.AddField("DAY04", sUrls[4])
+		urlEmbed.AddField("DAY05", sUrls[5])
+		urlEmbed.AddField("RUSH00", sUrls[6])
+	}
+	if m.Author.ID == "318743234601811969" || m.Author.ID == "905699384581312542" ||
+		m.Author.ID == "382356905990815744" || m.Author.ID == "383847223504666626" {
+		if m.Content == prefix+"STATUS" {
+			s.UpdateListeningStatus("$명령어")
+		}
+		if strings.HasPrefix(m.Content, prefix+"STATUS") {
+			command := strings.Split(m.Content, " ")
+			if len(command) != 2 {
+				s.ChannelMessageSend(m.ChannelID, "usage: "+prefix+"STATUS <TARGET STATUS>")
+			}
+			s.UpdateGameStatus(0, command[1])
+		}
+		if m.Content == prefix+"GOAHEAD" {
+			mode = !mode
+			if mode {
+				s.ChannelMessageSend(m.ChannelID, "사용자 등록모드 시작")
+			} else {
+				s.ChannelMessageSend(m.ChannelID, "사용자 등록모드 종료")
+			}
 		}
 	}
 	if mode && strings.HasPrefix(m.Content, prefix+"인트라등록") {
@@ -226,7 +249,8 @@ func sendCommandDetail(s *discordgo.Session, m *discordgo.MessageCreate) {
 		prefix+"인트라등록 <IntraID>\n" +
 			prefix+"인트라수정 <IntraID>")
 	commandDetailEmbed.AddField(
-		"제출 명령어",
+		"서브젝트 명령어",
+		prefix+"서브젝트목록\n"+
 		prefix+"제출 <GitRepoURL> <SubjectID>",
 	)
 	commandDetailEmbed.AddField(

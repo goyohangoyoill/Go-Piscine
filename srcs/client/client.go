@@ -29,6 +29,18 @@ func init() {
 	InitSubject(SubjectInfoMap)
 }
 
+func GetAllSubjectURL() (ret []string) {
+	ret = append(ret, sDay00)
+	ret = append(ret, sDay01)
+	ret = append(ret, sDay02)
+	ret = append(ret, sDay03)
+	ret = append(ret, sDay04)
+	ret = append(ret, sDay05)
+	ret = append(ret, sRush00)
+	return
+}
+
+
 // NewClient 함수는 Client 구조체의 생성자이다.
 func NewClient(mDB *mongo.Database) (ret *Client) {
 	ret = &Client{}
