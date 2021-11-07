@@ -1,95 +1,67 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
 	"github.com/bwmarrin/discordgo"
 	embed "github.com/clinet/discordgo-embed"
 	log "github.com/sirupsen/logrus"
+	"go.mongodb.org/mongo-driver/bson"
 	"piscine-golang-interact/client"
+	"piscine-golang-interact/schema"
 	"strings"
+	"time"
 )
 
-func registerEvalResponse(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
-	matchedUserID := make(chan client.MatchInfo)
-	go c.Register(r.UserID, matchedUserID)
-	evalInfo := <-matchedUserID
-	log.Println("eval match complete (register wait case)")
-	switch evalInfo.Code {
-	case false:
-		log.Println("register canceled")
-	case true:
-		dmChan, _ := s.UserChannelCreate(r.UserID)
-		matchSuccessEmbed := embed.NewEmbed()
-		matchSuccessEmbed.SetTitle("평가 매칭 성공!")
-		matchSuccessEmbed.AddField(
-			"피평가자 intra ID:",
-			c.FindIntraByUID(evalInfo.IntervieweeID),
-		)
-		matchSuccessEmbed.AddField(
-			"평가할 서브젝트:",
-			evalInfo.Subject.SubjectName+"\n"+
-				evalInfo.Subject.SubjectURL,
-		)
-		matchSuccessEmbed.AddField(
-			"평가표 링크:",
-			evalInfo.Subject.EvalGuideURL,
-		)
-		s.ChannelMessageSendEmbed(dmChan.ID, matchSuccessEmbed.MessageEmbed)
-	}
-	delete(registerMIDs, r.UserID)
-}
-
-func registerEvalTask(s *discordgo.Session, m *discordgo.MessageCreate) {
-	dmChan, _ := s.UserChannelCreate(m.Author.ID)
-	regMsg, _ := s.ChannelMessageSend(dmChan.ID, "**주의** 평가가 매칭된 후, 평가는 취소할 수 없음!\n"+
-		"아직 매칭되지 않은 평가를 취소하고 싶다면 "+prefix+"평가취소 명령어를 사용하세요")
-	registerMIDs[m.Author.ID] = regMsg.ID
-	s.MessageReactionAdd(dmChan.ID, regMsg.ID, "⭕")
-	s.MessageReactionAdd(dmChan.ID, regMsg.ID, "❌")
-}
-
-func RegisterCancelTask(s *discordgo.Session, m *discordgo.MessageCreate) {
-	userChannel := c.MatchMap[m.Author.ID]
-	if userChannel == nil {
-		s.ChannelMessageSend(m.ChannelID, "현재 평가 등록을 하지 않은 사용자입니다.")
-		return
-	}
-	msg := c.RegisterCancel(m.Author.ID)
-	s.ChannelMessageSend(m.ChannelID, msg)
-	userChannel <- client.MatchInfo{Code: false}
-	s.ChannelMessageSend(m.ChannelID, "정상적으로 평가 등록이 취소되었습니다.")
-}
-
 func submissionResponse(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
+	mid, _ := s.ChannelMessageSend(r.ChannelID, "채점을 등록하였습니다.")
 	gitUrl := submitURLs[r.UserID]
 	subjectID := submitSIDs[r.UserID]
-	matchedUserID := make(chan client.MatchInfo)
-	go c.Submit(subjectID, r.UserID, gitUrl, matchedUserID)
-	evalInfo := <-matchedUserID
-	log.Println("eval match complete (submit wait case)")
-	switch evalInfo.Code {
-	case false:
-		log.Println("submission canceled")
-	case true:
-		dmChan, _ := s.UserChannelCreate(r.UserID)
-		matchSuccessEmbed := embed.NewEmbed()
-		matchSuccessEmbed.SetTitle("평가 매칭 성공!")
-		matchSuccessEmbed.AddField(
-			"평가자 intra ID:",
-			c.FindIntraByUID(evalInfo.InterviewerID),
-		)
-		matchSuccessEmbed.AddField(
-			"평가할 서브젝트:",
-			evalInfo.Subject.SubjectName+"\n"+
-				evalInfo.Subject.SubjectURL,
-		)
-		s.ChannelMessageSendEmbed(dmChan.ID, matchSuccessEmbed.MessageEmbed)
+	code := c.Submit(subjectID, r.UserID, gitUrl)
+	response := Success{}
+	json.Unmarshal(code, response)
+	result := schema.EvalResult{
+		Course: subjectID,
+		Pass: response.Success,
 	}
-	delete(submitMIDs, r.UserID)
-	delete(submitURLs, r.UserID)
-	delete(submitSIDs, r.UserID)
+	ctx := context.Background()
+	curUser := schema.Person{}
+	c.MDB.Collection("people").FindOne(ctx, bson.D{{"name", r.UserID}}).Decode(&curUser)
+	curUser.Score = append(curUser.Score, result)
+	c.MDB.Collection("people").UpdateOne(ctx, bson.D{{"name", r.UserID}}, curUser)
+	s.ChannelMessageEdit(r.ChannelID, mid.ID, "채점이 완료되었습니다..!")
+	time.Sleep(time.Second)
+	s.ChannelMessageSend(r.ChannelID, "...\n")
+	time.Sleep(time.Second)
+	s.ChannelMessageSend(r.ChannelID, "...\n")
+	time.Sleep(time.Second)
+	s.ChannelMessageSend(r.ChannelID, "...\n")
+	time.Sleep(time.Second)
+
+	scoreEmbed := embed.NewEmbed()
+	scoreEmbed.SetTitle(curUser.Name + "의 채점 결과")
+	if result.Pass {
+		scoreEmbed.AddField(result.Course, "[ OK ]")
+	} else {
+		scoreEmbed.AddField(result.Course, "[ KO ]")
+	}
+	s.ChannelMessageSendEmbed(r.ChannelID, scoreEmbed.MessageEmbed)
 }
 
 func submissionTask(s *discordgo.Session, m *discordgo.MessageCreate) {
+	if c.FindIntraByUID(m.Author.ID) == "가입하지 않은 사용자" {
+		if mode {
+			s.ChannelMessageSendEmbed(m.ChannelID,
+				embed.NewGenericEmbed("피신 등록을 진행하지 않은 사용자입니다",
+					prefix+"인트라등록 명령어를 이용해\n"+
+						"인트라 등록을 진행해 주시기 바랍니다."))
+		} else {
+			s.ChannelMessageSendEmbed(m.ChannelID,
+				embed.NewGenericEmbed("피신 등록을 진행하지 않은 사용자입니다.",
+					"인트라등록 기간이 지났습니다.\n" +
+					"관리자에게 문의 바랍니다."))
+		}
+	}
 	command := strings.Split(m.Content, " ")
 	if len(command) != 3 {
 		log.Println("uid:", m.Author.ID, ", 포맷과 다른 제출")
@@ -108,23 +80,17 @@ func submissionTask(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 	dmChan, _ := s.UserChannelCreate(m.Author.ID)
-	submitMsg, _ := s.ChannelMessageSend(dmChan.ID, "***주의*** 평가가 매칭된 후, 제출을 취소할 수 없음!\n"+
-		"평가받을 Git Repo: "+command[1]+"\n"+
-		"평가받을 Subject : "+subjectName+"\n"+
-		"아직 매칭되지 않은 평가를 취소하고 싶다면 "+prefix+"제출취소 명령어를 사용하세요")
+	submitMsg, _ := s.ChannelMessageSendEmbed(dmChan.ID,
+		embed.NewGenericEmbed(
+			"***주의*** 평가가 매칭된 후, 제출을 취소할 수 없음!",
+			"평가받을 Git Repo: "+command[1]+"\n"+
+				"평가받을 Subject : "+subjectName+"\n"+
+				"아직 매칭되지 않은 평가를 취소하고 싶다면 "+prefix+"제출취소 명령어를 사용하세요",
+				),
+		)
 	submitMIDs[m.Author.ID] = submitMsg.ID
 	submitURLs[m.Author.ID] = command[1]
 	submitSIDs[m.Author.ID] = subjectName
 	s.MessageReactionAdd(dmChan.ID, submitMsg.ID, "⭕")
 	s.MessageReactionAdd(dmChan.ID, submitMsg.ID, "❌")
-}
-
-func submissionCancelTask(s *discordgo.Session, m *discordgo.MessageCreate) {
-	userChannel := c.MatchMap[m.Author.ID]
-	if userChannel == nil {
-		s.ChannelMessageSend(m.ChannelID, "현재 제출을 하지 않은 사용자입니다.")
-		return
-	}
-	userChannel <- client.MatchInfo{Code: false}
-	s.ChannelMessageSend(m.ChannelID, "정상적으로 서브젝트 제출이 취소되었습니다.")
 }

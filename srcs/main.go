@@ -40,8 +40,6 @@ var (
 )
 
 func init() {
-	registerMIDs = make(map[string]string)
-
 	submitMIDs = make(map[string]string)
 	submitURLs = make(map[string]string)
 	submitSIDs = make(map[string]string)
@@ -57,10 +55,6 @@ func init() {
 }
 
 func main() {
-	//if err := record.Connection(); err != nil {
-	//	log.Println("error creating DB connection", err)
-	//	return
-	//}
 	dg, err := discordgo.New("Bot " + (viper.Get("BOT_TOKEN")).(string))
 	if err != nil {
 		log.Println("error creating Discord session,", err)
@@ -86,16 +80,6 @@ func messageReactionAdd(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
 	}
 	log.Println("uid:", r.UserID, "add reaction")
 	switch r.MessageID {
-	case registerMIDs[r.UserID]:
-		switch r.Emoji.Name {
-		case "⭕":
-			s.ChannelMessageDelete(r.ChannelID, r.MessageID)
-			registerEvalResponse(s, r)
-		case "❌":
-			s.ChannelMessageDelete(r.ChannelID, r.MessageID)
-			s.ChannelMessageSend(r.ChannelID, "평가자 등록을 취소하셨습니다.")
-		}
-		return
 	case submitMIDs[r.UserID]:
 		switch r.Emoji.Name {
 		case "⭕":
@@ -104,17 +88,6 @@ func messageReactionAdd(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
 		case "❌":
 			s.ChannelMessageDelete(r.ChannelID, r.MessageID)
 			s.ChannelMessageSend(r.ChannelID, "제출을 취소하셨습니다.")
-		}
-		return
-	case signupMIDs[r.UserID]:
-		switch r.Emoji.Name {
-		case "⭕":
-			s.ChannelMessageDelete(r.ChannelID, r.MessageID)
-			msg := c.SignUp(r.UserID, IntraIDs[r.UserID], context.Background())
-			s.ChannelMessageSend(r.ChannelID, msg)
-		case "❌":
-			s.ChannelMessageDelete(r.ChannelID, r.MessageID)
-			s.ChannelMessageSend(r.ChannelID, "등록을 취소하셨습니다.")
 		}
 		return
 	case modifyMIDs[r.UserID]:
@@ -159,36 +132,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			s.ChannelMessageSend(m.ChannelID, "피신에 참여중인 참가자가 아닙니다.")
 			return
 		}
-		if c.IsUserInQ(m.Author.ID) {
-			s.ChannelMessageSend(m.ChannelID, "이미 큐에 등록된 유저입니다.")
-			return
-		}
 		submissionTask(s, m)
-		return
-	}
-	if m.Content == prefix+"제출취소" {
-		submissionCancelTask(s, m)
-		return
-	}
-	if m.Content == prefix+"평가등록" {
-		if c.FindIntraByUID(m.Author.ID) == "가입되지 않은 사용자" {
-			s.ChannelMessageSend(m.ChannelID, "피신에 참여중인 참가자가 아닙니다.")
-			return
-		}
-		if c.IsUserInQ(m.Author.ID) {
-			s.ChannelMessageSend(m.ChannelID, "이미 큐에 등록된 유저입니다.")
-			return
-		}
-		registerEvalTask(s, m)
-		return
-	}
-	if m.Content == prefix+"평가취소" {
-		RegisterCancelTask(s, m)
-		return
-	}
-	if m.Content == prefix+"매칭상태" {
-		state := c.MatchState()
-		sendEmbedPretty(s, m.ChannelID, state)
 		return
 	}
 	if m.Content == prefix+"내점수" {
@@ -260,23 +204,16 @@ func sendCommandDetail(s *discordgo.Session, m *discordgo.MessageCreate) {
 	commandDetailEmbed.SetTitle("명령어 목록")
 	commandDetailEmbed.AddField(
 		"도움말 명령어",
-		prefix+"도움말"+"\n"+
 			prefix+"명령어",
 	)
 	commandDetailEmbed.AddField(
 		"제출 명령어",
-		prefix+"제출 <GitRepoURL> <SubjectID>"+"\n"+
+		prefix+"제출 <GitRepoURL> <SubjectID>\n"+
 			prefix+"제출취소",
 	)
 	commandDetailEmbed.AddField(
-		"평가자 등록 명령어",
-		prefix+"평가등록"+"\n"+
-			prefix+"평가취소",
-	)
-	commandDetailEmbed.AddField(
 		"정보 확인 명령어",
-		prefix+"내점수"+"\n"+
-			prefix+"매칭상태",
+		prefix+"내점수",
 	)
 	s.ChannelMessageSendEmbed(m.ChannelID, commandDetailEmbed.MessageEmbed)
 }
