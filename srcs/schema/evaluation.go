@@ -21,6 +21,7 @@ func (ser SortableEvalRes) Less(i, j int) bool {
 		if !ser[i].Pass {
 			return false
 		}
+		return true
 	default:
 		return false
 	}
