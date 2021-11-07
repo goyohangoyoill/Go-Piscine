@@ -3,14 +3,16 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"strings"
+	"time"
+
+	"piscine-golang-interact/client"
+	"piscine-golang-interact/schema"
+
 	"github.com/bwmarrin/discordgo"
 	embed "github.com/clinet/discordgo-embed"
 	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
-	"piscine-golang-interact/client"
-	"piscine-golang-interact/schema"
-	"strings"
-	"time"
 )
 
 func submissionResponse(s *discordgo.Session, r *discordgo.MessageReactionAdd) {

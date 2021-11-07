@@ -1,8 +1,9 @@
 package client
 
 import (
-	log "github.com/sirupsen/logrus"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // SubjectInfo 구조체는 서브젝트 관련 정보들을 담고 있는 구조체이다.

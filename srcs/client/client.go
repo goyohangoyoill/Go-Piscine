@@ -2,13 +2,15 @@ package client
 
 import (
 	"context"
-	log "github.com/sirupsen/logrus"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 	"io/ioutil"
 	"net/http"
 	"os"
+
 	"piscine-golang-interact/schema"
+
+	log "github.com/sirupsen/logrus"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // SubjectInfoMap 은 sid 를 기반으로 해당 서브젝트의 정보 구조체를 반환하는 맵이다.
