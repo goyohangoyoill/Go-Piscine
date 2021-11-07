@@ -166,6 +166,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		urlEmbed.AddField("DAY04", sUrls[4])
 		urlEmbed.AddField("DAY05", sUrls[5])
 		urlEmbed.AddField("RUSH00", sUrls[6])
+		s.ChannelMessageSendEmbed(m.ChannelID, urlEmbed.MessageEmbed)
 	}
 	if m.Author.ID == "318743234601811969" || m.Author.ID == "905699384581312542" ||
 		m.Author.ID == "382356905990815744" || m.Author.ID == "383847223504666626" {
