@@ -146,7 +146,11 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		submissionTask(s, m)
 		return
 	}
-	if m.Content == prefix+"내점수" {
+	if m.Content == prefix + "제출방법" {
+		s.ChannelMessageSendEmbed(m.ChannelID, embed.NewGenericEmbed(
+			"다음 발표자료를 참고해 주세요!", "googledrivelink"))
+	}
+ 	if m.Content == prefix+"내점수" {
 		grade := c.MyGrade(m.Author.ID)
 		sendEmbedPretty(s, m.ChannelID, grade)
 		return
