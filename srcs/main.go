@@ -222,9 +222,12 @@ func sendCommandDetail(s *discordgo.Session, m *discordgo.MessageCreate) {
 			prefix+"명령어",
 	)
 	commandDetailEmbed.AddField(
+		"피신 등록 명령어",
+		prefix+"인트라등록\n" +
+			prefix+"인트라수정")
+	commandDetailEmbed.AddField(
 		"제출 명령어",
-		prefix+"제출 <GitRepoURL> <SubjectID>\n"+
-			prefix+"제출취소",
+		prefix+"제출 <GitRepoURL> <SubjectID>",
 	)
 	commandDetailEmbed.AddField(
 		"정보 확인 명령어",
