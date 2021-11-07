@@ -19,7 +19,7 @@ func submissionResponse(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
 	subjectID := submitSIDs[r.UserID]
 	code := c.Submit(subjectID, r.UserID, gitUrl)
 	response := schema.Success{}
-	json.Unmarshal(code, response)
+	json.Unmarshal(code, &response)
 	result := schema.EvalResult{
 		Course: subjectID,
 		Pass:   response.Success,
