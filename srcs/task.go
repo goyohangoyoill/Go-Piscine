@@ -67,6 +67,7 @@ func submissionTask(s *discordgo.Session, m *discordgo.MessageCreate) {
 					"인트라등록 기간이 지났습니다.\n"+
 						"관리자에게 문의 바랍니다."))
 		}
+		return
 	}
 	command := strings.Split(m.Content, " ")
 	if len(command) != 3 {

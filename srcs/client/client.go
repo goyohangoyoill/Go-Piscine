@@ -115,11 +115,11 @@ func (c *Client) ModifyId(uid, name string, ctx context.Context) (msg string) {
 func (c *Client) Submit(sName, uid, url string) (msg []byte) {
 	log.Println("Submit called")
 	defer log.Println("Submit ended")
-	baseURL := os.Getenv("GRADE_SERVICE")
+	baseURL := os.Getenv("GRADE_SERVICE_SERVICE_HOST")
 	log.Println("http Get try")
 	resp, err := http.Get("http://" + baseURL + ":4242/grade/" + SubjectInfoMap[sName].SubjectName + "?URL=" + url)
 	log.Println("http Get ended")
-	if err != nil {
+	if err != nil || resp == nil || resp.Body == nil {
 		log.Println(c.FindIntraByUID(uid) + " got error")
 		log.Error(err)
 	}
