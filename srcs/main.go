@@ -20,7 +20,7 @@ import (
 )
 
 const (
-	prefix = "="
+	prefix = "$"
 )
 
 var (
@@ -228,7 +228,8 @@ func sendCommandDetail(s *discordgo.Session, m *discordgo.MessageCreate) {
 	)
 	commandDetailEmbed.AddField(
 		"정보 확인 명령어",
-		prefix+"내점수",
+		prefix+"내점수\n"+
+		prefix+"제출방법",
 	)
 	s.ChannelMessageSendEmbed(m.ChannelID, commandDetailEmbed.MessageEmbed)
 }
