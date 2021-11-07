@@ -6,5 +6,5 @@ type Person struct {
 	Course    int          `json:"course"`
 	Point     uint         `json:"point"`
 	Password  string       `json:"password"`
-	Score     []EvalResult `json:"score"`
+	Score     SortableEvalRes `json:"score"`
 }

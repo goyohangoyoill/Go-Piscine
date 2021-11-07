@@ -119,14 +119,21 @@ func (c *Client) Submit(sName, uid, url string) (msg []byte) {
 	baseURL := os.Getenv("GRADE_SERVICE_SERVICE_HOST")
 	log.Println("http Get try")
 	resp, err := http.Get("http://" + baseURL + ":4242/grade/" + SubjectInfoMap[sName].SubjectName + "?URL=" + url)
-	defer resp.Body.Close()
+
 	log.Println("http Get ended")
 	if err != nil {
 		log.Println(c.FindIntraByUID(uid) + " got error")
 		log.Error(err)
 	}
-	time.Sleep(time.Second)
+
 	body, _ := ioutil.ReadAll(resp.Body)
+
+	time.Sleep(time.Second)
+	rErr := resp.Body.Close()
+	if rErr != nil {
+		log.Error(rErr)
+	}
+
 	return body
 }
 

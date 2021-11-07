@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"sort"
 	"strings"
 	"time"
 
@@ -37,6 +38,7 @@ func submissionResponse(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
 		curUser.Score = make([]schema.EvalResult, 0)
 	}
 	curUser.Score = append(curUser.Score, result)
+	sort.Sort(curUser.Score)
 	_, err := c.MDB.Collection("people").UpdateOne(ctx, bson.D{{Key: "password", Value: r.UserID}},
 	bson.D{{Key: "$set", Value: bson.D{{Key: "score", Value: curUser.Score}}}})
 	if err != nil {
