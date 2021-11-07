@@ -19,7 +19,7 @@ func (ser SortableEvalRes) Less(i, j int) bool {
 		return true
 	case cmp == 0:
 		if !ser[i].Pass {
-			return true
+			return false
 		}
 	default:
 		return false

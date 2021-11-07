@@ -148,7 +148,7 @@ func (c *Client) MyGrade(uid string) (grades EmbedInfo) {
 		log.Error(err)
 	}
 	curScores := curPerson.Score
-	sort.Sort(curScores)
+	sort.Sort(&curScores)
 	if len(curScores) == 0 {
 		grades.embedRows = []EmbedRow{{
 			"평가 받은 과제가 없습니다.",
