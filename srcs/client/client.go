@@ -146,13 +146,13 @@ func (c *Client) MyGrade(uid string) (grades EmbedInfo) {
 		}}
 		return grades
 	}
-	sended := make(map[string]bool)
+	sent := make(map[string]bool)
 	for _, item := range curScores {
 		itemRow := EmbedRow{
 			name:  SubjectInfoMap[item.Course].SubjectName,
 			lines: []string{},
 		}
-		if sended[item.Course] {
+		if sent[item.Course] {
 			continue
 		}
 		if item.Pass {
@@ -160,7 +160,7 @@ func (c *Client) MyGrade(uid string) (grades EmbedInfo) {
 		} else {
 			itemRow.lines = append(itemRow.lines, "[ 💥 ]")
 		}
-		sended[item.Course] = true
+		sent[item.Course] = true
 		grades.embedRows = append(grades.embedRows, itemRow)
 	}
 	return

@@ -33,8 +33,15 @@ func submissionResponse(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
 	ctx := context.Background()
 	curUser := schema.Person{}
 	c.MDB.Collection("people").FindOne(ctx, bson.D{{Key: "password", Value: r.UserID}}).Decode(&curUser)
+	if curUser.Score == nil {
+		curUser.Score = make([]schema.EvalResult, 0)
+	}
 	curUser.Score = append(curUser.Score, result)
-	c.MDB.Collection("people").UpdateOne(ctx, bson.D{{Key: "password", Value: r.UserID}}, curUser)
+	_, err := c.MDB.Collection("people").UpdateOne(ctx, bson.D{{Key: "password", Value: r.UserID}},
+	bson.D{{Key: "$set", Value: bson.D{{Key: "score", Value: curUser.Score}}}})
+	if err != nil {
+		log.Warn(err)
+	}
 	s.ChannelMessageEdit(r.ChannelID, mid.ID, "채점이 완료되었습니다..!")
 	time.Sleep(time.Second)
 	s.ChannelMessageSend(r.ChannelID, "...\n")
