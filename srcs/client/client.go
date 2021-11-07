@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"time"
 
 	"piscine-golang-interact/schema"
 
@@ -124,6 +125,7 @@ func (c *Client) Submit(sName, uid, url string) (msg []byte) {
 		log.Println(c.FindIntraByUID(uid) + " got error")
 		log.Error(err)
 	}
+	time.Sleep(time.Second)
 	body, _ := ioutil.ReadAll(resp.Body)
 	return body
 }

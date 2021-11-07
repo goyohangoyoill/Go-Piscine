@@ -16,7 +16,7 @@ import (
 )
 
 func submissionResponse(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
-	mid, _ := s.ChannelMessageSend(r.ChannelID, "채점을 등록하였습니다.")
+	s.ChannelMessageSend(r.ChannelID, "채점을 등록하였습니다. 잠시 기다려주세요...")
 	gitUrl := submitURLs[r.UserID]
 	subjectID := submitSIDs[r.UserID]
 	code := c.Submit(subjectID, r.UserID, gitUrl)
@@ -42,7 +42,7 @@ func submissionResponse(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
 	if err != nil {
 		log.Warn(err)
 	}
-	s.ChannelMessageEdit(r.ChannelID, mid.ID, "채점이 완료되었습니다..!")
+	s.ChannelMessageSend(r.ChannelID, "채점이 완료되었습니다..!")
 	time.Sleep(time.Second)
 	s.ChannelMessageSend(r.ChannelID, "...\n")
 	time.Sleep(time.Second)
@@ -98,10 +98,10 @@ func submissionTask(s *discordgo.Session, m *discordgo.MessageCreate) {
 	dmChan, _ := s.UserChannelCreate(m.Author.ID)
 	submitMsg, _ := s.ChannelMessageSendEmbed(dmChan.ID,
 		embed.NewGenericEmbed(
-			"***주의*** 평가가 매칭된 후, 제출을 취소할 수 없음!",
-			"평가받을 Git Repo: "+command[1]+"\n"+
-				"평가받을 Subject : "+subjectName+"\n"+
-				"아직 매칭되지 않은 평가를 취소하고 싶다면 "+prefix+"제출취소 명령어를 사용하세요",
+			"**주의** 제출된 깃허브 레포는 Public 이어야 합니다.",
+			"평가받을 Subject : "+subjectName+"\n"+
+				"평가받을 Git Repo: "+command[1]+"\n"+
+				"평가가 끝난 후 레포를 Private 으로 바꾸는 것 잊지 마십시오!",
 		),
 	)
 	submitMIDs[m.Author.ID] = submitMsg.ID
