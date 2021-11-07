@@ -26,6 +26,10 @@ func submissionResponse(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
 		Course: subjectID,
 		Pass:   response.Success,
 	}
+	if response.Error {
+		s.ChannelMessageSend(r.ChannelID, response.Content)
+		return
+	}
 	ctx := context.Background()
 	curUser := schema.Person{}
 	c.MDB.Collection("people").FindOne(ctx, bson.D{{Key: "name", Value: r.UserID}}).Decode(&curUser)
