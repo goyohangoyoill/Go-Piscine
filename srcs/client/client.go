@@ -145,7 +145,7 @@ func (c *Client) MyGrade(uid string) (grades EmbedInfo) {
 	}
 	for _, item := range curScores {
 		itemRow := EmbedRow{
-			name: SubjectInfoMap[item.Course].SubjectName,
+			name:  SubjectInfoMap[item.Course].SubjectName,
 			lines: []string{},
 		}
 		if item.Pass {
@@ -163,7 +163,7 @@ func (c *Client) FindIntraByUID(uid string) (intraID string) {
 	ctx := context.Background()
 	var curPerson schema.Person
 	err := c.MDB.Collection("people").FindOne(ctx, bson.D{
-		{"password", uid},
+		{Key: "password", Value: uid},
 	}).Decode(&curPerson)
 	if err != nil {
 		return "가입하지 않은 사용자"
