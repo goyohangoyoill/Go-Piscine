@@ -90,6 +90,17 @@ func messageReactionAdd(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
 			s.ChannelMessageSend(r.ChannelID, "제출을 취소하셨습니다.")
 		}
 		return
+	case signupMIDs[r.UserID]:
+		switch r.Emoji.Name {
+		case "⭕":
+			s.ChannelMessageDelete(r.ChannelID, r.MessageID)
+			msg := c.SignUp(r.UserID, IntraIDs[r.UserID], context.Background())
+			s.ChannelMessageSend(r.ChannelID, msg)
+		case "❌":
+			s.ChannelMessageDelete(r.ChannelID, r.MessageID)
+			s.ChannelMessageSend(r.ChannelID, "등록을 취소하셨습니다.")
+		}
+		return
 	case modifyMIDs[r.UserID]:
 		switch r.Emoji.Name {
 		case "⭕":
