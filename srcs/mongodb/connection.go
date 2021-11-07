@@ -31,12 +31,13 @@ func MongoConn() (client *mongo.Client, ctx context.Context) {
 	info := preparation()
 	for _, v := range info {
 		if v == "" {
-			fmt.Errorf("viper invalid value")
+			_ = fmt.Errorf("viper invalid value")
 			return nil, nil
 		}
 	}
 	// timeout 기반의 Context 생성
-	ctx, _ = context.WithTimeout(context.Background(), time.Second*4)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*4)
+	defer cancel()
 
 	// Authentication 을 위한 Client Option 구성
 	clientOptions := options.Client().ApplyURI(
