@@ -37,7 +37,6 @@ var (
 	modifyMIDs map[string]string
 	IntraIDs   map[string]string
 	mode       = false
-	limit = true
 )
 
 func init() {
@@ -155,12 +154,6 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		grade := c.MyGrade(m.Author.ID)
 		sendEmbedPretty(s, m.ChannelID, grade)
 		return
-	}
-	if m.Content == prefix+"LIMIT" && (m.Author.ID == "318743234601811969" ||
-		m.Author.ID == "905699384581312542" || m.Author.ID == "382356905990815744" ||
-		m.Author.ID == "383847223504666626") {
-		limit = !limit
-		// TODO 1시간 제출 제한.
 	}
 	if m.Content == prefix+"GOAHEAD" && (m.Author.ID == "318743234601811969" ||
 		m.Author.ID == "905699384581312542" || m.Author.ID == "382356905990815744" ||
