@@ -51,6 +51,8 @@ func submissionResponse(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
 	} else {
 		scoreEmbed.AddField(result.Course, "[ 💥 ]")
 	}
+	scoreEmbed.AddField(result.Course + "의 평가지", client.SubjectInfoMap[result.Course].EvalGuideURL + "\n" +
+		"📔 최소 2명 이상의 동료에게 동료평가를 받으십시오.")
 	s.ChannelMessageSendEmbed(r.ChannelID, scoreEmbed.MessageEmbed)
 }
 

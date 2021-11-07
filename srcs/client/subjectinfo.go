@@ -19,7 +19,7 @@ type SubjectInfo struct {
 }
 
 const (
-	sDay00  = "https://drive.google.com/file/d/1gaInmQbHqp75T-9XasAK1qzBPvTJa0EN/view?usp=sharing"
+	sDay00  = "https://drive.google.com/file/d/1ogcVpYzHAuR2un_h-PuFvS3ev3dOeGpF/view?usp=sharing"
 	sDay01  = "https://drive.google.com/file/d/19qO4jprHdnJS4AP9HF7WN11csaeJR_0x/view?usp=sharing"
 	sDay02  = "https://drive.google.com/file/d/1c2TLc_g6lGBwYEQ7qVjfFKgmeXAz1LCm/view?usp=sharing"
 	sDay03  = "https://drive.google.com/file/d/1dZsEY158-A9MOjRxxCr1Py4a5YB_PnmT/view?usp=sharing"
