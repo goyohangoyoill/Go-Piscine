@@ -145,16 +145,21 @@ func (c *Client) MyGrade(uid string) (grades EmbedInfo) {
 		}}
 		return grades
 	}
+	sended := make(map[string]bool)
 	for _, item := range curScores {
 		itemRow := EmbedRow{
-			name:  SubjectInfoMap[item.Course].SubjectName,
+			name: SubjectInfoMap[item.Course].SubjectName,
 			lines: []string{},
 		}
-		if item.Pass {
-			itemRow.lines = append(itemRow.lines, "["+"\033[0;31m"+" OK "+"\033[0;0m"+"]")
-		} else {
-			itemRow.lines = append(itemRow.lines, "["+"\033[0;31m"+" KO "+"\033[0;0m"+"]")
+		if sended[item.Course] {
+			continue
 		}
+		if item.Pass {
+			itemRow.lines = append(itemRow.lines, "[ OK ]")
+		} else {
+			itemRow.lines = append(itemRow.lines, "[ KO ]")
+		}
+		sended[item.Course] = true
 		grades.embedRows = append(grades.embedRows, itemRow)
 	}
 	return
