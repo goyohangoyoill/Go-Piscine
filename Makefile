@@ -1,6 +1,6 @@
 NAME=interact-server
 IMAGE=zxcv9203/piscine-golang-interact
-TAG=0.1.9
+TAG=0.5.4
 
 dpull		:
 	docker pull $(IMAGE):$(TAG)
@@ -16,3 +16,6 @@ dbt			:
 
 dpush		:
 	docker push $(IMAGE):$(TAG)
+dbp			:
+	sudo make dbt
+	sudo make dpush
