@@ -39,7 +39,7 @@ func (c *Client) SignUp(uid, name string, ctx context.Context) (msg string) {
 	searchPerson := schema.Person{}
 	err := c.MDB.Collection("people").FindOne(
 		ctx,
-		bson.D{{"password", uid}},
+		bson.D{{Key: "password", Value: uid}},
 	).Decode(&searchPerson)
 	if err != nil {
 		log.Error(err)
@@ -49,7 +49,7 @@ func (c *Client) SignUp(uid, name string, ctx context.Context) (msg string) {
 	}
 	err = c.MDB.Collection("people").FindOne(
 		ctx,
-		bson.D{{"name", name}},
+		bson.D{{Key: "name", Value: name}},
 	).Decode(&searchPerson)
 	if err != nil {
 		log.Error(err)
@@ -75,7 +75,7 @@ func (c *Client) ModifyId(uid, name string, ctx context.Context) (msg string) {
 	searchPerson := schema.Person{}
 	err := c.MDB.Collection("people").FindOne(
 		ctx,
-		bson.D{{"password", uid}},
+		bson.D{{Key: "password", Value: uid}},
 	).Decode(&searchPerson)
 	if err != nil {
 		log.Error(err)
@@ -85,7 +85,7 @@ func (c *Client) ModifyId(uid, name string, ctx context.Context) (msg string) {
 	}
 	err = c.MDB.Collection("people").FindOne(
 		ctx,
-		bson.D{{"name", name}},
+		bson.D{{Key: "name", Value: name}},
 	).Decode(&searchPerson)
 	if err != nil {
 		log.Error(err)
@@ -131,7 +131,7 @@ func (c *Client) MyGrade(uid string) (grades EmbedInfo) {
 	grades.title = "서브젝트 채점 현황"
 	ctx := context.Background()
 	curPerson := schema.Person{}
-	err := c.MDB.Collection("people").FindOne(ctx, bson.D{{"password", uid}}).Decode(&curPerson)
+	err := c.MDB.Collection("people").FindOne(ctx, bson.D{{Key: "password", Value: uid}}).Decode(&curPerson)
 	if err != nil {
 		log.Error(err)
 	}

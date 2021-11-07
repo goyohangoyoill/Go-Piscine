@@ -18,17 +18,17 @@ func submissionResponse(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
 	gitUrl := submitURLs[r.UserID]
 	subjectID := submitSIDs[r.UserID]
 	code := c.Submit(subjectID, r.UserID, gitUrl)
-	response := Success{}
+	response := schema.Success{}
 	json.Unmarshal(code, response)
 	result := schema.EvalResult{
 		Course: subjectID,
-		Pass: response.Success,
+		Pass:   response.Success,
 	}
 	ctx := context.Background()
 	curUser := schema.Person{}
-	c.MDB.Collection("people").FindOne(ctx, bson.D{{"name", r.UserID}}).Decode(&curUser)
+	c.MDB.Collection("people").FindOne(ctx, bson.D{{Key: "name", Value: r.UserID}}).Decode(&curUser)
 	curUser.Score = append(curUser.Score, result)
-	c.MDB.Collection("people").UpdateOne(ctx, bson.D{{"name", r.UserID}}, curUser)
+	c.MDB.Collection("people").UpdateOne(ctx, bson.D{{Key: "name", Value: r.UserID}}, curUser)
 	s.ChannelMessageEdit(r.ChannelID, mid.ID, "채점이 완료되었습니다..!")
 	time.Sleep(time.Second)
 	s.ChannelMessageSend(r.ChannelID, "...\n")
@@ -58,8 +58,8 @@ func submissionTask(s *discordgo.Session, m *discordgo.MessageCreate) {
 		} else {
 			s.ChannelMessageSendEmbed(m.ChannelID,
 				embed.NewGenericEmbed("피신 등록을 진행하지 않은 사용자입니다.",
-					"인트라등록 기간이 지났습니다.\n" +
-					"관리자에게 문의 바랍니다."))
+					"인트라등록 기간이 지났습니다.\n"+
+						"관리자에게 문의 바랍니다."))
 		}
 	}
 	command := strings.Split(m.Content, " ")
@@ -86,8 +86,8 @@ func submissionTask(s *discordgo.Session, m *discordgo.MessageCreate) {
 			"평가받을 Git Repo: "+command[1]+"\n"+
 				"평가받을 Subject : "+subjectName+"\n"+
 				"아직 매칭되지 않은 평가를 취소하고 싶다면 "+prefix+"제출취소 명령어를 사용하세요",
-				),
-		)
+		),
+	)
 	submitMIDs[m.Author.ID] = submitMsg.ID
 	submitURLs[m.Author.ID] = command[1]
 	submitSIDs[m.Author.ID] = subjectName

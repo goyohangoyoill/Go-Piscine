@@ -1,4 +1,4 @@
-package main
+package schema
 
 type Success struct {
 	Success bool   `json:"success"`
