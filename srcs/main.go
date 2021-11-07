@@ -148,7 +148,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 	if m.Content == prefix+"제출방법" {
 		s.ChannelMessageSendEmbed(m.ChannelID, embed.NewGenericEmbed(
-			"다음 발표자료를 참고해 주세요!", "googledrivelink"))
+			"다음 자료를 참고해 주세요!", "https://drive.google.com/file/d/1zBjwIHh4YplBFpGwqP6ys4iCQy4YvetF/view?usp=sharing"))
 	}
 	if m.Content == prefix+"내점수" {
 		grade := c.MyGrade(m.Author.ID)
