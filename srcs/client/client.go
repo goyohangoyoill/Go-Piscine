@@ -124,7 +124,8 @@ func (c *Client) Submit(sName, uid, url string) (msg []byte) {
 		log.Error(err)
 	}
 	body, _ := ioutil.ReadAll(resp.Body)
-	resp.Body.Close()
+	err = resp.Body.Close()
+	log.Warn(err)
 	return body
 }
 
