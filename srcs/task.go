@@ -47,9 +47,9 @@ func submissionResponse(s *discordgo.Session, r *discordgo.MessageReactionAdd) {
 	scoreEmbed := embed.NewEmbed()
 	scoreEmbed.SetTitle(curUser.Name + "의 채점 결과")
 	if result.Pass {
-		scoreEmbed.AddField(result.Course, "[ OK ]")
+		scoreEmbed.AddField(result.Course, "[ ✅ ]")
 	} else {
-		scoreEmbed.AddField(result.Course, "[ KO ]")
+		scoreEmbed.AddField(result.Course, "[ 💥 ]")
 	}
 	s.ChannelMessageSendEmbed(r.ChannelID, scoreEmbed.MessageEmbed)
 }
