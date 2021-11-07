@@ -172,11 +172,13 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		m.Author.ID == "382356905990815744" || m.Author.ID == "383847223504666626" {
 		if m.Content == prefix+"STATUS" {
 			s.UpdateListeningStatus("$명령어")
+			return
 		}
 		if strings.HasPrefix(m.Content, prefix+"STATUS") {
 			command := strings.Split(m.Content, " ")
 			if len(command) != 2 {
 				s.ChannelMessageSend(m.ChannelID, "usage: "+prefix+"STATUS <TARGET STATUS>")
+				return
 			}
 			s.UpdateGameStatus(0, command[1])
 		}
