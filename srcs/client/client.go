@@ -140,8 +140,8 @@ func (c *Client) MyGrade(uid string) (grades EmbedInfo) {
 	curScores := curPerson.Score
 	if len(curScores) == 0 {
 		grades.embedRows = []EmbedRow{{
-			"평가받은 과제가 없어요...",
-			[]string{"평가받은 과제가 없습니다.", "Go? Ahead!"},
+			"평가 받은 과제가 없습니다.",
+			[]string{"힘내시길 바래요...😢😢😢", "Go❓ Ahead❗️"},
 		}}
 		return grades
 	}
@@ -151,9 +151,9 @@ func (c *Client) MyGrade(uid string) (grades EmbedInfo) {
 			lines: []string{},
 		}
 		if item.Pass {
-			itemRow.lines = append(itemRow.lines, "[ OK ]")
+			itemRow.lines = append(itemRow.lines, "["+"\033[0;31m"+" OK "+"\033[0;0m"+"]")
 		} else {
-			itemRow.lines = append(itemRow.lines, "[ KO ]")
+			itemRow.lines = append(itemRow.lines, "["+"\033[0;31m"+" KO "+"\033[0;0m"+"]")
 		}
 		grades.embedRows = append(grades.embedRows, itemRow)
 	}
